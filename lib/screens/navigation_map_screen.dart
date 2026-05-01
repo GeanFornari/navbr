@@ -7,19 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/services/gps_service.dart';
 import 'package:navbr/theme/app_colors.dart';
+import 'package:navbr/widgets/chart_settings_banner.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 enum MapOrientation { northUp, trackUp }
 
 /// NavigationMapScreen
 /// Tela principal de navegação que exibe múltiplas camadas de cartas aeronáuticas
-/// (WAC e IAC) sobrepostas, com suporte a Moving Map via GPS.
-///
-/// Classes presentes:
-/// - NavigationMapScreen: Widget Stateful para a tela de mapa.
-/// - _NavigationMapScreenState: Estado que gerencia a lógica de GPS e renderização de PDF.
+/// (WAC e IAC) sobrepostas, com suporte a Moving Map via GPS e ajustes de opacidade.
 class NavigationMapScreen extends StatefulWidget {
   final String? tiffPath;
   final Map<String, double>? tiffBoundingBox;
@@ -49,6 +48,9 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
   
   String? _renderedIacPath;
   bool _isRenderingPdf = false;
+
+  OverlayEntry? _overlayEntry;
+  final LayerLink _layerLink = LayerLink();
 
   @override
   void initState() {
@@ -80,6 +82,41 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
       _updateMapCamera();
     });
     _gps.start();
+  }
+
+  void _toggleSettingsOverlay() {
+    if (_overlayEntry != null) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+      return;
+    }
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          GestureDetector(
+            onTap: () {
+              _overlayEntry?.remove();
+              _overlayEntry = null;
+            },
+            child: Container(color: Colors.transparent),
+          ),
+          Positioned(
+            width: 250,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(-210, 40),
+              child: const ChartSettingsBanner(
+                chartType: 'IAC',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   Future<void> _renderPdfToImage() async {
@@ -152,12 +189,12 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
   void dispose() {
     _gps.dispose();
     _mapController.dispose();
+    _overlayEntry?.remove();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Calculando bounds para a câmera inicial (prioriza IAC se disponível, senão WAC)
     LatLngBounds? initialBounds;
     if (widget.pdfBoundingBox != null) {
       initialBounds = LatLngBounds(
@@ -175,6 +212,14 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
       appBar: AppBar(
         title: const Text('Navegação Combinada'),
         actions: [
+          CompositedTransformTarget(
+            link: _layerLink,
+            child: IconButton(
+              onPressed: _toggleSettingsOverlay,
+              icon: const Icon(Icons.settings),
+              tooltip: 'Ajustes',
+            ),
+          ),
           IconButton(
             onPressed: _toggleOrientation,
             icon: Icon(
@@ -186,100 +231,102 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.surface,
       ),
-      body: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCameraFit: initialBounds != null 
-                ? CameraFit.bounds(bounds: initialBounds, padding: const EdgeInsets.all(50))
-                : null,
-              onPositionChanged: (position, hasGesture) {
-                if (hasGesture && _isFollowing) {
-                  setState(() {
-                    _isFollowing = false;
-                  });
-                }
-              },
-            ),
+      body: Consumer<ChartSettingsProvider>(
+        builder: (context, settings, child) {
+          return Stack(
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.navbr',
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCameraFit: initialBounds != null 
+                    ? CameraFit.bounds(bounds: initialBounds, padding: const EdgeInsets.all(50))
+                    : null,
+                  onPositionChanged: (position, hasGesture) {
+                    if (hasGesture && _isFollowing) {
+                      setState(() {
+                        _isFollowing = false;
+                      });
+                    }
+                  },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.navbr',
+                  ),
+                  
+                  if (widget.tiffPath != null && widget.tiffBoundingBox != null)
+                    OverlayImageLayer(
+                      overlayImages: [
+                        OverlayImage(
+                          bounds: LatLngBounds(
+                            LatLng(widget.tiffBoundingBox!['south']!, widget.tiffBoundingBox!['west']!),
+                            LatLng(widget.tiffBoundingBox!['north']!, widget.tiffBoundingBox!['east']!),
+                          ),
+                          imageProvider: FileImage(File(widget.tiffPath!)),
+                          opacity: settings.wacOpacity,
+                        ),
+                      ],
+                    ),
+
+                  if (settings.isIacVisible && _renderedIacPath != null && widget.pdfBoundingBox != null)
+                    OverlayImageLayer(
+                      overlayImages: [
+                        OverlayImage(
+                          bounds: LatLngBounds(
+                            LatLng(widget.pdfBoundingBox!['south']!, widget.pdfBoundingBox!['west']!),
+                            LatLng(widget.pdfBoundingBox!['north']!, widget.pdfBoundingBox!['east']!),
+                          ),
+                          imageProvider: FileImage(File(_renderedIacPath!)),
+                          opacity: settings.iacOpacity,
+                        ),
+                      ],
+                    ),
+
+                  if (_currentLocation != null)
+                    MarkerLayer(
+                      rotate: false,
+                      markers: [
+                        Marker(
+                          point: _currentLocation!,
+                          width: 60,
+                          height: 60,
+                          child: Transform.rotate(
+                            angle: _orientation == MapOrientation.northUp 
+                                ? (_currentBearing ?? 0) * (math.pi / 180) 
+                                : 0.0,
+                            child: const Icon(
+                              Icons.airplanemode_active,
+                              color: AppColors.error,
+                              size: 60,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
               ),
               
-              // Camada WAC (Fundo)
-              if (widget.tiffPath != null && widget.tiffBoundingBox != null)
-                OverlayImageLayer(
-                  overlayImages: [
-                    OverlayImage(
-                      bounds: LatLngBounds(
-                        LatLng(widget.tiffBoundingBox!['south']!, widget.tiffBoundingBox!['west']!),
-                        LatLng(widget.tiffBoundingBox!['north']!, widget.tiffBoundingBox!['east']!),
-                      ),
-                      imageProvider: FileImage(File(widget.tiffPath!)),
-                      opacity: 0.8, // WAC geralmente é a base
-                    ),
-                  ],
-                ),
-
-              // Camada IAC (Sobreposta)
-              if (_renderedIacPath != null && widget.pdfBoundingBox != null)
-                OverlayImageLayer(
-                  overlayImages: [
-                    OverlayImage(
-                      bounds: LatLngBounds(
-                        LatLng(widget.pdfBoundingBox!['south']!, widget.pdfBoundingBox!['west']!),
-                        LatLng(widget.pdfBoundingBox!['north']!, widget.pdfBoundingBox!['east']!),
-                      ),
-                      imageProvider: FileImage(File(_renderedIacPath!)),
-                      opacity: 0.7, // Opacidade para ver a WAC por baixo
-                    ),
-                  ],
-                ),
-
-              if (_currentLocation != null)
-                MarkerLayer(
-                  rotate: false,
-                  markers: [
-                    Marker(
-                      point: _currentLocation!,
-                      width: 60,
-                      height: 60,
-                      child: Transform.rotate(
-                        angle: _orientation == MapOrientation.northUp 
-                            ? (_currentBearing ?? 0) * (math.pi / 180) 
-                            : 0.0,
-                        child: const Icon(
-                          Icons.airplanemode_active,
-                          color: AppColors.error,
-                          size: 60,
+              if (_isRenderingPdf)
+                Container(
+                  color: Colors.black45,
+                  child: const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: AppColors.accent),
+                        SizedBox(height: 16),
+                        Text(
+                          'Renderizando Carta IAC...',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
             ],
-          ),
-          
-          if (_isRenderingPdf)
-            Container(
-              color: Colors.black45,
-              child: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: AppColors.accent),
-                    SizedBox(height: 16),
-                    Text(
-                      'Renderizando Carta IAC...',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -294,3 +341,4 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
     );
   }
 }
+

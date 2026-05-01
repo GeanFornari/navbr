@@ -4,6 +4,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/screens/wac_map_screen.dart';
 import 'package:navbr/screens/iac_map_screen.dart';
 import 'package:navbr/screens/navigation_map_screen.dart';
@@ -12,12 +13,19 @@ import 'package:navbr/services/geotiff_parser.dart';
 import 'package:navbr/services/geopdf_parser.dart';
 import 'package:navbr/services/aisweb_api_service.dart';
 import 'package:navbr/theme/app_colors.dart';
+import 'package:navbr/widgets/chart_settings_banner.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ChartSettingsProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 /// MyApp
@@ -58,12 +66,6 @@ class MyApp extends StatelessWidget {
 
 /// InitializationScreen
 /// Tela de boas-vindas e gerenciamento de download de cartas.
-/// 
-/// Classes/Métodos presentes:
-/// - _InitializationScreenState: Gerencia o estado de download e caminhos dos arquivos.
-/// - _checkSavedCharts: Verifica se as cartas já foram baixadas e salvas no SharedPreferences.
-/// - _startWacPoC: Inicia o download e processamento da carta WAC.
-/// - _startIacPoC: Inicia o download e processamento da carta IAC.
 class InitializationScreen extends StatefulWidget {
   const InitializationScreen({super.key});
 
@@ -80,6 +82,9 @@ class _InitializationScreenState extends State<InitializationScreen> {
   
   String? _savedPdfPath;
   Map<String, double>? _savedPdfBoundingBox;
+
+  OverlayEntry? _overlayEntry;
+  final LayerLink _layerLink = LayerLink();
 
   @override
   void initState() {
@@ -109,6 +114,11 @@ class _InitializationScreenState extends State<InitializationScreen> {
           };
         });
       }
+    } else {
+      setState(() {
+        _savedTiffPath = null;
+        _savedTiffBoundingBox = null;
+      });
     }
     
     // Check IAC
@@ -130,7 +140,48 @@ class _InitializationScreenState extends State<InitializationScreen> {
           };
         });
       }
+    } else {
+      setState(() {
+        _savedPdfPath = null;
+        _savedPdfBoundingBox = null;
+      });
     }
+  }
+
+  void _toggleSettingsOverlay(BuildContext context, String chartType) {
+    if (_overlayEntry != null) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+      return;
+    }
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          // Dismiss area
+          GestureDetector(
+            onTap: () {
+              _overlayEntry?.remove();
+              _overlayEntry = null;
+            },
+            child: Container(color: Colors.transparent),
+          ),
+          Positioned(
+            width: 250,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(-200, 40),
+              child: ChartSettingsBanner(
+                chartType: chartType,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   Future<void> _startWacPoC() async {
@@ -161,7 +212,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
       await prefs.setDouble('saved_wac_east', boundingBox['east']!);
       await prefs.setDouble('saved_wac_west', boundingBox['west']!);
 
-      _checkSavedCharts(); // Refresh paths
+      _checkSavedCharts(); 
     } catch (e) {
       setState(() {
         _status = 'Erro: $e';
@@ -213,7 +264,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
       await prefs.setDouble('saved_iac_east', boundingBox['east']!);
       await prefs.setDouble('saved_iac_west', boundingBox['west']!);
 
-      _checkSavedCharts(); // Refresh paths
+      _checkSavedCharts(); 
     } catch (e) {
       setState(() {
         _status = 'Erro: $e';
@@ -307,6 +358,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
                     );
                   },
                   color: AppColors.iacButton,
+                  isIac: true,
                 ),
               ],
             ],
@@ -382,6 +434,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
     required VoidCallback onDownload,
     required VoidCallback onOpen,
     required Color color,
+    bool isIac = false,
   }) {
     final bool isSaved = path != null;
 
@@ -406,6 +459,14 @@ class _InitializationScreenState extends State<InitializationScreen> {
                     ],
                   ),
                 ),
+                if (isIac && isSaved)
+                  CompositedTransformTarget(
+                    link: _layerLink,
+                    child: IconButton(
+                      icon: const Icon(Icons.settings, color: AppColors.textSecondary),
+                      onPressed: () => _toggleSettingsOverlay(context, 'IAC'),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 16),
@@ -433,4 +494,5 @@ class _InitializationScreenState extends State<InitializationScreen> {
     );
   }
 }
+
 
