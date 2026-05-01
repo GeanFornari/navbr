@@ -160,8 +160,10 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
     }
   }
 
+  bool _isMapReady = false;
+
   void _updateMapCamera() {
-    if (!_isFollowing || _currentLocation == null) return;
+    if (!_isMapReady || !_isFollowing || _currentLocation == null) return;
 
     double newRotation = _mapController.camera.rotation;
     
@@ -233,6 +235,11 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                   initialCameraFit: initialBounds != null 
                     ? CameraFit.bounds(bounds: initialBounds, padding: const EdgeInsets.all(50))
                     : null,
+                  onMapReady: () {
+                    setState(() {
+                      _isMapReady = true;
+                    });
+                  },
                   onPositionChanged: (position, hasGesture) {
                     if (hasGesture && _isFollowing) {
                       setState(() {

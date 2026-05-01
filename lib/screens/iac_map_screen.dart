@@ -142,8 +142,10 @@ class _IacMapScreenState extends State<IacMapScreen> {
     }
   }
 
+  bool _isMapReady = false;
+
   void _updateMapCamera() {
-    if (!_isFollowing || _currentLocation == null) return;
+    if (!_isMapReady || !_isFollowing || _currentLocation == null) return;
 
     double newRotation = _mapController.camera.rotation;
     
@@ -209,6 +211,11 @@ class _IacMapScreenState extends State<IacMapScreen> {
               mapController: _mapController,
               options: MapOptions(
                 initialCameraFit: CameraFit.bounds(bounds: bounds),
+                onMapReady: () {
+                  setState(() {
+                    _isMapReady = true;
+                  });
+                },
                 onPositionChanged: (position, hasGesture) {
                   if (hasGesture && _isFollowing) {
                     setState(() {
