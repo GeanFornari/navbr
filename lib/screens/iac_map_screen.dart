@@ -1,13 +1,22 @@
+// ignore_for_file: dangling_library_doc_comments
+// Contém código gerado por IA
+
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/services/gps_service.dart';
+import 'package:navbr/theme/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 enum MapOrientation { northUp, trackUp }
 
+/// IacMapScreen
+/// Tela de visualização individual da carta IAC.
 class IacMapScreen extends StatefulWidget {
   final String pdfPath;
   final Map<String, double> boundingBox;
@@ -68,7 +77,6 @@ class _IacMapScreenState extends State<IacMapScreen> {
       final document = await PdfDocument.openFile(widget.pdfPath);
       final page = await document.getPage(1);
       
-      // Render at a high resolution so it doesn't look blurry
       final pageImage = await page.render(
         width: page.width * 3,
         height: page.height * 3,
@@ -80,16 +88,18 @@ class _IacMapScreenState extends State<IacMapScreen> {
 
       if (pageImage != null) {
         final directory = await getApplicationDocumentsDirectory();
-        final imagePath = '${directory.path}/rendered_iac.png';
+        final imagePath = '${directory.path}/rendered_iac_single.png';
         final file = File(imagePath);
         await file.writeAsBytes(pageImage.bytes);
         
-        setState(() {
-          _renderedImagePath = imagePath;
-        });
+        if (mounted) {
+          setState(() {
+            _renderedImagePath = imagePath;
+          });
+        }
       }
     } catch (e) {
-      print('Error rendering PDF: $e');
+      debugPrint('Error rendering PDF: $e');
     }
   }
 
@@ -132,10 +142,6 @@ class _IacMapScreenState extends State<IacMapScreen> {
     final east = widget.boundingBox['east']!;
     final west = widget.boundingBox['west']!;
 
-    // Note for PDFs: 
-    // The bounds extracted are just the "map port" inside the PDF, not the full A4 page.
-    // So if we slap the whole PDF into these bounds, it might scale weirdly.
-    // For this PoC, we'll draw it to see how close it is.
     final bounds = LatLngBounds(
       LatLng(south, west),
       LatLng(north, east),
@@ -145,74 +151,73 @@ class _IacMapScreenState extends State<IacMapScreen> {
       appBar: AppBar(
         title: const Text('IAC Moving Map'),
         actions: [
-          TextButton.icon(
+          IconButton(
             onPressed: _toggleOrientation,
             icon: Icon(
               _orientation == MapOrientation.northUp ? Icons.explore : Icons.navigation,
-              color: Colors.white,
             ),
-            label: Text(
-              _orientation == MapOrientation.northUp ? 'North Up' : 'Track Up',
-              style: const TextStyle(color: Colors.white),
-            ),
+            tooltip: _orientation == MapOrientation.northUp ? 'Norte para Cima' : 'Rota para Cima',
           ),
         ],
-        backgroundColor: Colors.deepPurple[800],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.surface,
       ),
       body: _renderedImagePath == null 
-        ? const Center(child: CircularProgressIndicator(semanticsLabel: 'Renderizando PDF...',))
-        : FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCameraFit: CameraFit.bounds(bounds: bounds),
-          onPositionChanged: (position, hasGesture) {
-            if (hasGesture && _isFollowing) {
-              setState(() {
-                _isFollowing = false;
-              });
-            }
-          },
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.navbr',
-          ),
-          
-          OverlayImageLayer(
-            overlayImages: [
-              OverlayImage(
-                bounds: bounds,
-                imageProvider: FileImage(File(_renderedImagePath!)),
-                opacity: 0.7,
+        ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+        : Consumer<ChartSettingsProvider>(
+            builder: (context, settings, child) => FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCameraFit: CameraFit.bounds(bounds: bounds),
+                onPositionChanged: (position, hasGesture) {
+                  if (hasGesture && _isFollowing) {
+                    setState(() {
+                      _isFollowing = false;
+                    });
+                  }
+                },
               ),
-            ],
-          ),
-
-          if (_currentLocation != null)
-            MarkerLayer(
-              rotate: false,
-              markers: [
-                Marker(
-                  point: _currentLocation!,
-                  width: 80,
-                  height: 80,
-                  child: Transform.rotate(
-                    angle: _orientation == MapOrientation.northUp 
-                        ? (_currentBearing ?? 0) * (pi / 180) 
-                        : 0.0,
-                    child: const Icon(
-                      Icons.airplanemode_active,
-                      color: Colors.red,
-                      size: 80,
-                    ),
-                  ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.navbr',
                 ),
+                
+                if (settings.isIacVisible)
+                  OverlayImageLayer(
+                    overlayImages: [
+                      OverlayImage(
+                        bounds: bounds,
+                        imageProvider: FileImage(File(_renderedImagePath!)),
+                        opacity: settings.iacOpacity,
+                      ),
+                    ],
+                  ),
+
+                if (_currentLocation != null)
+                  MarkerLayer(
+                    rotate: false,
+                    markers: [
+                      Marker(
+                        point: _currentLocation!,
+                        width: 60,
+                        height: 60,
+                        child: Transform.rotate(
+                          angle: _orientation == MapOrientation.northUp 
+                              ? (_currentBearing ?? 0) * (math.pi / 180) 
+                              : 0.0,
+                          child: const Icon(
+                            Icons.airplanemode_active,
+                            color: AppColors.error,
+                            size: 60,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
-        ],
-      ),
+          ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
@@ -220,7 +225,7 @@ class _IacMapScreenState extends State<IacMapScreen> {
           });
           _updateMapCamera();
         },
-        backgroundColor: _isFollowing ? Colors.deepPurple : Colors.grey,
+        backgroundColor: _isFollowing ? AppColors.accent : AppColors.disabled,
         child: const Icon(Icons.my_location, color: Colors.white),
       ),
     );

@@ -1,12 +1,20 @@
+// ignore_for_file: dangling_library_doc_comments
+// Contém código gerado por IA
+
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/services/gps_service.dart';
+import 'package:navbr/theme/app_colors.dart';
+import 'package:provider/provider.dart';
 
 enum MapOrientation { northUp, trackUp }
 
+/// WacMapScreen
+/// Tela de visualização individual da carta WAC.
 class WacMapScreen extends StatefulWidget {
   final String tiffPath;
   final Map<String, double> boundingBox;
@@ -38,7 +46,6 @@ class _WacMapScreenState extends State<WacMapScreen> {
       
       double? bearing;
       if (_currentLocation != null) {
-        // Only calculate bearing if the location actually changed to avoid NaN
         if (_currentLocation!.latitude != location.latitude || _currentLocation!.longitude != location.longitude) {
           bearing = const Distance().bearing(_currentLocation!, location);
           if (bearing.isNaN) {
@@ -65,16 +72,11 @@ class _WacMapScreenState extends State<WacMapScreen> {
     double newRotation = _mapController.camera.rotation;
     
     if (_orientation == MapOrientation.trackUp && _currentBearing != null) {
-      // flutter_map rotation is generally positive clockwise.
-      // If we want the map to turn so that the plane points UP,
-      // we must rotate the map negatively by the bearing amount.
-      // E.g., if heading is 90 deg (East), map must rotate -90 deg so East is at the top.
       newRotation = 360 - _currentBearing!;
     } else if (_orientation == MapOrientation.northUp) {
       newRotation = 0.0;
     }
 
-    // Move first, then rotate
     _mapController.move(_currentLocation!, _mapController.camera.zoom);
     _mapController.rotate(newRotation);
   }
@@ -84,7 +86,7 @@ class _WacMapScreenState extends State<WacMapScreen> {
       _orientation = _orientation == MapOrientation.northUp 
         ? MapOrientation.trackUp 
         : MapOrientation.northUp;
-      _isFollowing = true; // snap back to following when toggling
+      _isFollowing = true;
     });
     _updateMapCamera();
   }
@@ -98,107 +100,83 @@ class _WacMapScreenState extends State<WacMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // NW corner (top left), SE corner (bottom right)
     final north = widget.boundingBox['north']!;
     final south = widget.boundingBox['south']!;
     final east = widget.boundingBox['east']!;
     final west = widget.boundingBox['west']!;
 
     final bounds = LatLngBounds(
-      LatLng(south, west), // SouthWest
-      LatLng(north, east), // NorthEast
+      LatLng(south, west),
+      LatLng(north, east),
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WAC / ERC Moving Map'),
+        title: const Text('WAC Moving Map'),
         actions: [
-          TextButton.icon(
+          IconButton(
             onPressed: _toggleOrientation,
             icon: Icon(
               _orientation == MapOrientation.northUp ? Icons.explore : Icons.navigation,
-              color: Colors.white,
             ),
-            label: Text(
-              _orientation == MapOrientation.northUp ? 'North Up' : 'Track Up',
-              style: const TextStyle(color: Colors.white),
-            ),
+            tooltip: _orientation == MapOrientation.northUp ? 'Norte para Cima' : 'Rota para Cima',
           ),
         ],
-        backgroundColor: Colors.blue[800],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.surface,
       ),
-      body: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          initialCameraFit: CameraFit.bounds(bounds: bounds),
-          onPositionChanged: (position, hasGesture) {
-            // If the user drags the map, stop following automatically
-            if (hasGesture && _isFollowing) {
-              setState(() {
-                _isFollowing = false;
-              });
-            }
-          },
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.navbr',
+      body: Consumer<ChartSettingsProvider>(
+        builder: (context, settings, child) => FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCameraFit: CameraFit.bounds(bounds: bounds),
+            onPositionChanged: (position, hasGesture) {
+              if (hasGesture && _isFollowing) {
+                setState(() {
+                  _isFollowing = false;
+                });
+              }
+            },
           ),
-          
-          OverlayImageLayer(
-            overlayImages: [
-              OverlayImage(
-                bounds: bounds,
-                imageProvider: FileImage(File(widget.tiffPath)),
-                opacity: 0.8,
-              ),
-            ],
-          ),
-
-          // Draw the route line between SDCO and SBBU
-          PolylineLayer(
-            polylines: [
-              Polyline(
-                points: [
-                  const LatLng(-23.4805, -47.4841), // SDCO
-                  const LatLng(-22.2949, -49.0604), // SBBU
-                ],
-                color: Colors.deepPurple,
-                strokeWidth: 4.0,
-              ),
-            ],
-          ),
-
-          if (_currentLocation != null)
-            MarkerLayer(
-              // rotate: false -> The marker does NOT rotate with the map. 
-              // It stays aligned to the physical screen. This is crucial!
-              rotate: false,
-              markers: [
-                Marker(
-                  point: _currentLocation!,
-                  width: 80,
-                  height: 80,
-                  child: Transform.rotate(
-                    // If the marker ignores map rotation, its top is always your screen's top.
-                    // In North Up (map is 0): We want it to point to Bearing.
-                    // In Track Up (map is 360-Bearing): We want it to point straight UP to screen top (Angle 0)
-                    // The icon default is pointing UP (0 radians).
-                    angle: _orientation == MapOrientation.northUp 
-                        ? (_currentBearing ?? 0) * (pi / 180) 
-                        : 0.0,
-                    child: const Icon(
-                      Icons.airplanemode_active,
-                      color: Colors.red,
-                      size: 80,
-                    ),
-                  ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.navbr',
+            ),
+            
+            OverlayImageLayer(
+              overlayImages: [
+                OverlayImage(
+                  bounds: bounds,
+                  imageProvider: FileImage(File(widget.tiffPath)),
+                  opacity: settings.wacOpacity,
                 ),
               ],
             ),
-        ],
+
+            if (_currentLocation != null)
+              MarkerLayer(
+                rotate: false,
+                markers: [
+                  Marker(
+                    point: _currentLocation!,
+                    width: 60,
+                    height: 60,
+                    child: Transform.rotate(
+                      angle: _orientation == MapOrientation.northUp 
+                          ? (_currentBearing ?? 0) * (math.pi / 180) 
+                          : 0.0,
+                      child: const Icon(
+                        Icons.airplanemode_active,
+                        color: AppColors.error,
+                        size: 60,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -207,10 +185,11 @@ class _WacMapScreenState extends State<WacMapScreen> {
           });
           _updateMapCamera();
         },
-        backgroundColor: _isFollowing ? Colors.blue : Colors.grey,
+        backgroundColor: _isFollowing ? AppColors.accent : AppColors.disabled,
         child: const Icon(Icons.my_location, color: Colors.white),
       ),
     );
   }
 }
+
 
