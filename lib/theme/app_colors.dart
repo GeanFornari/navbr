@@ -14,6 +14,7 @@ class AppColors {
   static const Color primary = Color(0xFF1A237E); // Indigo escuro
   static const Color secondary = Color(0xFF303F9F); // Indigo médio
   static const Color accent = Color(0xFF00B0FF); // Light Blue accent
+  static const Color black = Color(0xFF121212); // Preto premium/escuro
   
   // Background e Superfícies
   static const Color background = Color(0xFFF5F7FA);
