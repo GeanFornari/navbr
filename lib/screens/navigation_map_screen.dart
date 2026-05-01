@@ -298,25 +298,25 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                         ),
                       
                       // Engrenagem no canto superior direito da IAC
-                      if (widget.pdfBoundingBox != null)
+                      if (widget.pdfBoundingBox != null && settings.isIacVisible)
                         Marker(
                           point: LatLng(
                             widget.pdfBoundingBox!['north']!,
                             widget.pdfBoundingBox!['east']!,
                           ),
-                          width: 40,
-                          height: 40,
+                          width: 30,
+                          height: 30,
                           child: CompositedTransformTarget(
                             link: _layerLink,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: AppColors.surface.withAlpha(200),
+                                color: AppColors.surface.withAlpha(220),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.primary, width: 2),
+                                border: Border.all(color: AppColors.primary, width: 1.5),
                               ),
                               child: IconButton(
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.settings, color: AppColors.primary, size: 24),
+                                icon: const Icon(Icons.settings, color: AppColors.primary, size: 18),
                                 onPressed: _toggleSettingsOverlay,
                               ),
                             ),

@@ -7,11 +7,10 @@ import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/theme/app_colors.dart';
 
 /// ChartSettingsBanner
-/// Widget que exibe as configurações de opacidade e visibilidade da carta IAC.
-/// Projetado para ser exibido dentro de um Overlay.
+/// Widget que exibe as configurações de opacidade e opção de remover a visualização da IAC.
 /// 
 /// Classes/Métodos presentes:
-/// - ChartSettingsBanner: Widget que contém os controles de configuração.
+/// - ChartSettingsBanner: Widget simplificado para ajustes da IAC.
 class ChartSettingsBanner extends StatelessWidget {
   final String chartType;
 
@@ -25,59 +24,56 @@ class ChartSettingsBanner extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: Container(
-        width: 250,
-        padding: const EdgeInsets.all(16),
+        width: 220,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withAlpha(50),
-              blurRadius: 10,
+              blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
-          border: Border.all(color: AppColors.primary.withAlpha(30)),
+          border: Border.all(color: AppColors.primary.withAlpha(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.settings, size: 18, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text(
-                  'Ajustes: $chartType',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+            // Opção de Remover (Ocultar tudo)
+            InkWell(
+              onTap: () {
+                Provider.of<ChartSettingsProvider>(context, listen: false).toggleIacVisibility(false);
+              },
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.visibility_off_outlined, size: 16, color: AppColors.error),
+                    SizedBox(width: 8),
+                    Text(
+                      'Remover',
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
             const Divider(),
             
-            // Controle de Visibilidade IAC
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Exibir Camada IAC', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                Consumer<ChartSettingsProvider>(
-                  builder: (context, provider, _) => Switch(
-                    value: provider.isIacVisible,
-                    onChanged: provider.toggleIacVisibility,
-                    activeThumbColor: AppColors.iacButton,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            const Text('Opacidade da IAC', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            const Text('Opacidade da IAC', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
             Consumer<ChartSettingsProvider>(
               builder: (context, provider, _) => Slider(
                 value: provider.iacOpacity,
                 onChanged: provider.setIacOpacity,
-                activeColor: AppColors.iacButton,
-                inactiveColor: AppColors.iacButton.withAlpha(50),
+                activeColor: AppColors.secondary,
+                inactiveColor: AppColors.secondary.withAlpha(40),
               ),
             ),
           ],

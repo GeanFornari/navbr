@@ -255,26 +255,27 @@ class _IacMapScreenState extends State<IacMapScreen> {
                       ),
                     
                     // Engrenagem 'colada' no canto da carta
-                    Marker(
-                      point: LatLng(north, east),
-                      width: 40,
-                      height: 40,
-                      child: CompositedTransformTarget(
-                        link: _layerLink,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withAlpha(200),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.primary, width: 2),
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(Icons.settings, color: AppColors.primary, size: 24),
-                            onPressed: _toggleSettingsOverlay,
+                    if (settings.isIacVisible)
+                      Marker(
+                        point: LatLng(north, east),
+                        width: 30,
+                        height: 30,
+                        child: CompositedTransformTarget(
+                          link: _layerLink,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.surface.withAlpha(220),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.primary, width: 1.5),
+                            ),
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(Icons.settings, color: AppColors.primary, size: 18),
+                              onPressed: _toggleSettingsOverlay,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ],
