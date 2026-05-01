@@ -11,6 +11,7 @@ import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/services/gps_service.dart';
 import 'package:navbr/theme/app_colors.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:navbr/widgets/chart_settings_banner.dart';
 import 'package:provider/provider.dart';
 
 enum MapOrientation { northUp, trackUp }
@@ -42,6 +43,9 @@ class _IacMapScreenState extends State<IacMapScreen> {
   
   String? _renderedImagePath;
 
+  OverlayEntry? _overlayEntry;
+  final LayerLink _layerLink = LayerLink();
+
   @override
   void initState() {
     super.initState();
@@ -70,6 +74,41 @@ class _IacMapScreenState extends State<IacMapScreen> {
       _updateMapCamera();
     });
     _gps.start();
+  }
+
+  void _toggleSettingsOverlay() {
+    if (_overlayEntry != null) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+      return;
+    }
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          GestureDetector(
+            onTap: () {
+              _overlayEntry?.remove();
+              _overlayEntry = null;
+            },
+            child: Container(color: Colors.transparent),
+          ),
+          Positioned(
+            width: 250,
+            child: CompositedTransformFollower(
+              link: _layerLink,
+              showWhenUnlinked: false,
+              offset: const Offset(-210, 45),
+              child: const ChartSettingsBanner(
+                chartType: 'IAC',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   Future<void> _renderPdfToImage() async {
@@ -132,6 +171,7 @@ class _IacMapScreenState extends State<IacMapScreen> {
   void dispose() {
     _gps.dispose();
     _mapController.dispose();
+    _overlayEntry?.remove();
     super.dispose();
   }
 
@@ -194,10 +234,10 @@ class _IacMapScreenState extends State<IacMapScreen> {
                     ],
                   ),
 
-                if (_currentLocation != null)
-                  MarkerLayer(
-                    rotate: false,
-                    markers: [
+                MarkerLayer(
+                  rotate: false,
+                  markers: [
+                    if (_currentLocation != null)
                       Marker(
                         point: _currentLocation!,
                         width: 60,
@@ -213,8 +253,30 @@ class _IacMapScreenState extends State<IacMapScreen> {
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    
+                    // Engrenagem 'colada' no canto da carta
+                    Marker(
+                      point: LatLng(north, east),
+                      width: 40,
+                      height: 40,
+                      child: CompositedTransformTarget(
+                        link: _layerLink,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.surface.withAlpha(200),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.primary, width: 2),
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.settings, color: AppColors.primary, size: 24),
+                            onPressed: _toggleSettingsOverlay,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

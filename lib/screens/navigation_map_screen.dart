@@ -106,7 +106,7 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
             child: CompositedTransformFollower(
               link: _layerLink,
               showWhenUnlinked: false,
-              offset: const Offset(-210, 40),
+              offset: const Offset(-210, 45),
               child: const ChartSettingsBanner(
                 chartType: 'IAC',
               ),
@@ -212,14 +212,6 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
       appBar: AppBar(
         title: const Text('Navegação Combinada'),
         actions: [
-          CompositedTransformTarget(
-            link: _layerLink,
-            child: IconButton(
-              onPressed: _toggleSettingsOverlay,
-              icon: const Icon(Icons.settings),
-              tooltip: 'Ajustes',
-            ),
-          ),
           IconButton(
             onPressed: _toggleOrientation,
             icon: Icon(
@@ -283,10 +275,12 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                       ],
                     ),
 
-                  if (_currentLocation != null)
-                    MarkerLayer(
-                      rotate: false,
-                      markers: [
+                  // Marcadores (Aeronave e Engrenagem de Configuração)
+                  MarkerLayer(
+                    rotate: false,
+                    markers: [
+                      // Ícone da Aeronave
+                      if (_currentLocation != null)
                         Marker(
                           point: _currentLocation!,
                           width: 60,
@@ -302,8 +296,34 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      
+                      // Engrenagem no canto superior direito da IAC
+                      if (widget.pdfBoundingBox != null)
+                        Marker(
+                          point: LatLng(
+                            widget.pdfBoundingBox!['north']!,
+                            widget.pdfBoundingBox!['east']!,
+                          ),
+                          width: 40,
+                          height: 40,
+                          child: CompositedTransformTarget(
+                            link: _layerLink,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.surface.withAlpha(200),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.primary, width: 2),
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(Icons.settings, color: AppColors.primary, size: 24),
+                                onPressed: _toggleSettingsOverlay,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ],
               ),
               

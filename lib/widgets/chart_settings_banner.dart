@@ -7,7 +7,7 @@ import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/theme/app_colors.dart';
 
 /// ChartSettingsBanner
-/// Widget que exibe as configurações de opacidade e visibilidade da carta.
+/// Widget que exibe as configurações de opacidade e visibilidade da carta IAC.
 /// Projetado para ser exibido dentro de um Overlay.
 /// 
 /// Classes/Métodos presentes:
@@ -55,34 +55,23 @@ class ChartSettingsBanner extends StatelessWidget {
             ),
             const Divider(),
             
-            // Controle de Visibilidade IAC (conforme pedido: apenas na IAC)
-            if (chartType == 'IAC') ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Exibir Camada IAC', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  Consumer<ChartSettingsProvider>(
-                    builder: (context, provider, _) => Switch(
-                      value: provider.isIacVisible,
-                      onChanged: provider.toggleIacVisibility,
-                      activeThumbColor: AppColors.iacButton,
-                    ),
+            // Controle de Visibilidade IAC
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Exibir Camada IAC', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                Consumer<ChartSettingsProvider>(
+                  builder: (context, provider, _) => Switch(
+                    value: provider.isIacVisible,
+                    onChanged: provider.toggleIacVisibility,
+                    activeThumbColor: AppColors.iacButton,
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            const Text('Opacidade WAC', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            Consumer<ChartSettingsProvider>(
-              builder: (context, provider, _) => Slider(
-                value: provider.wacOpacity,
-                onChanged: provider.setWacOpacity,
-                activeColor: AppColors.wacButton,
-                inactiveColor: AppColors.wacButton.withAlpha(50),
-              ),
+                ),
+              ],
             ),
-            const Text('Opacidade IAC', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            const SizedBox(height: 16),
+
+            const Text('Opacidade da IAC', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             Consumer<ChartSettingsProvider>(
               builder: (context, provider, _) => Slider(
                 value: provider.iacOpacity,
