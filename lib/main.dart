@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:navbr/providers/chart_settings_provider.dart';
+import 'package:navbr/screens/main_screen.dart';
 import 'package:navbr/screens/wac_map_screen.dart';
 import 'package:navbr/screens/iac_map_screen.dart';
 import 'package:navbr/screens/navigation_map_screen.dart';
@@ -59,7 +60,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const InitializationScreen(),
+      home: const MainScreen(chartsTab: InitializationScreen()),
     );
   }
 }
