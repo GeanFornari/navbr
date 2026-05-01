@@ -17,21 +17,9 @@ import 'package:provider/provider.dart';
 enum MapOrientation { northUp, trackUp }
 
 /// NavigationMapScreen
-/// Tela principal de navegação que exibe múltiplas camadas de cartas aeronáuticas
-/// (WAC e IAC) sobrepostas, com suporte a Moving Map via GPS e ajustes de opacidade.
+/// Tela principal de navegação que consome dados do ChartSettingsProvider.
 class NavigationMapScreen extends StatefulWidget {
-  final String? tiffPath;
-  final Map<String, double>? tiffBoundingBox;
-  final String? pdfPath;
-  final Map<String, double>? pdfBoundingBox;
-
-  const NavigationMapScreen({
-    super.key,
-    this.tiffPath,
-    this.tiffBoundingBox,
-    this.pdfPath,
-    this.pdfBoundingBox,
-  });
+  const NavigationMapScreen({super.key});
 
   @override
   State<NavigationMapScreen> createState() => _NavigationMapScreenState();
@@ -47,18 +35,15 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
   bool _isFollowing = true;
   
   String? _renderedIacPath;
-  bool _isRenderingPdf = false;
+  String? _lastIacPath; // Para detectar mudança e re-renderizar
 
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
+  bool _isMapReady = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.pdfPath != null) {
-      _renderPdfToImage();
-    }
-    
     _gps.locationStream.listen((location) {
       if (!mounted) return;
       
@@ -102,7 +87,7 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
             child: Container(color: Colors.transparent),
           ),
           Positioned(
-            width: 250,
+            width: 220,
             child: CompositedTransformFollower(
               link: _layerLink,
               showWhenUnlinked: false,
@@ -119,13 +104,9 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
     Overlay.of(context).insert(_overlayEntry!);
   }
 
-  Future<void> _renderPdfToImage() async {
-    setState(() {
-      _isRenderingPdf = true;
-    });
-    
+  Future<void> _renderPdfToImage(String pdfPath) async {
     try {
-      final document = await PdfDocument.openFile(widget.pdfPath!);
+      final document = await PdfDocument.openFile(pdfPath);
       final page = await document.getPage(1);
       
       final pageImage = await page.render(
@@ -139,28 +120,21 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
 
       if (pageImage != null) {
         final directory = await getApplicationDocumentsDirectory();
-        final imagePath = '${directory.path}/rendered_iac_combined.png';
+        final imagePath = '${directory.path}/rendered_iac_nav.png';
         final file = File(imagePath);
         await file.writeAsBytes(pageImage.bytes);
         
         if (mounted) {
           setState(() {
             _renderedIacPath = imagePath;
-            _isRenderingPdf = false;
+            _lastIacPath = pdfPath;
           });
         }
       }
     } catch (e) {
       debugPrint('Error rendering PDF: $e');
-      if (mounted) {
-        setState(() {
-          _isRenderingPdf = false;
-        });
-      }
     }
   }
-
-  bool _isMapReady = false;
 
   void _updateMapCamera() {
     if (!_isMapReady || !_isFollowing || _currentLocation == null) return;
@@ -197,37 +171,37 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    LatLngBounds? initialBounds;
-    if (widget.pdfBoundingBox != null) {
-      initialBounds = LatLngBounds(
-        LatLng(widget.pdfBoundingBox!['south']!, widget.pdfBoundingBox!['west']!),
-        LatLng(widget.pdfBoundingBox!['north']!, widget.pdfBoundingBox!['east']!),
-      );
-    } else if (widget.tiffBoundingBox != null) {
-      initialBounds = LatLngBounds(
-        LatLng(widget.tiffBoundingBox!['south']!, widget.tiffBoundingBox!['west']!),
-        LatLng(widget.tiffBoundingBox!['north']!, widget.tiffBoundingBox!['east']!),
-      );
-    }
+    return Consumer<ChartSettingsProvider>(
+      builder: (context, settings, child) {
+        // Detectar se a IAC mudou e re-renderizar
+        if (settings.iacPath != null && settings.iacPath != _lastIacPath) {
+          _renderPdfToImage(settings.iacPath!);
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Navegação Combinada'),
-        actions: [
-          IconButton(
-            onPressed: _toggleOrientation,
-            icon: Icon(
-              _orientation == MapOrientation.northUp ? Icons.explore : Icons.navigation,
-            ),
-            tooltip: _orientation == MapOrientation.northUp ? 'Norte para Cima' : 'Rota para Cima',
+        LatLngBounds? initialBounds;
+        if (settings.wacPath != null && settings.wacBoundingBox != null) {
+          initialBounds = LatLngBounds(
+            LatLng(settings.wacBoundingBox!['south']!, settings.wacBoundingBox!['west']!),
+            LatLng(settings.wacBoundingBox!['north']!, settings.wacBoundingBox!['east']!),
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Navegação Map/Nav'),
+            actions: [
+              IconButton(
+                onPressed: _toggleOrientation,
+                icon: Icon(
+                  _orientation == MapOrientation.northUp ? Icons.explore : Icons.navigation,
+                ),
+                tooltip: _orientation == MapOrientation.northUp ? 'Norte para Cima' : 'Rota para Cima',
+              ),
+            ],
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.surface,
           ),
-        ],
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.surface,
-      ),
-      body: Consumer<ChartSettingsProvider>(
-        builder: (context, settings, child) {
-          return Stack(
+          body: Stack(
             children: [
               FlutterMap(
                 mapController: _mapController,
@@ -254,27 +228,27 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                     userAgentPackageName: 'com.example.navbr',
                   ),
                   
-                  if (widget.tiffPath != null && widget.tiffBoundingBox != null)
+                  if (settings.wacPath != null && settings.wacBoundingBox != null)
                     OverlayImageLayer(
                       overlayImages: [
                         OverlayImage(
                           bounds: LatLngBounds(
-                            LatLng(widget.tiffBoundingBox!['south']!, widget.tiffBoundingBox!['west']!),
-                            LatLng(widget.tiffBoundingBox!['north']!, widget.tiffBoundingBox!['east']!),
+                            LatLng(settings.wacBoundingBox!['south']!, settings.wacBoundingBox!['west']!),
+                            LatLng(settings.wacBoundingBox!['north']!, settings.wacBoundingBox!['east']!),
                           ),
-                          imageProvider: FileImage(File(widget.tiffPath!)),
+                          imageProvider: FileImage(File(settings.wacPath!)),
                           opacity: settings.wacOpacity,
                         ),
                       ],
                     ),
 
-                  if (settings.isIacVisible && _renderedIacPath != null && widget.pdfBoundingBox != null)
+                  if (settings.isIacVisible && _renderedIacPath != null && settings.iacBoundingBox != null)
                     OverlayImageLayer(
                       overlayImages: [
                         OverlayImage(
                           bounds: LatLngBounds(
-                            LatLng(widget.pdfBoundingBox!['south']!, widget.pdfBoundingBox!['west']!),
-                            LatLng(widget.pdfBoundingBox!['north']!, widget.pdfBoundingBox!['east']!),
+                            LatLng(settings.iacBoundingBox!['south']!, settings.iacBoundingBox!['west']!),
+                            LatLng(settings.iacBoundingBox!['north']!, settings.iacBoundingBox!['east']!),
                           ),
                           imageProvider: FileImage(File(_renderedIacPath!)),
                           opacity: settings.iacOpacity,
@@ -282,11 +256,9 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                       ],
                     ),
 
-                  // Marcadores (Aeronave e Engrenagem de Configuração)
                   MarkerLayer(
                     rotate: false,
                     markers: [
-                      // Ícone da Aeronave
                       if (_currentLocation != null)
                         Marker(
                           point: _currentLocation!,
@@ -304,12 +276,11 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                           ),
                         ),
                       
-                      // Engrenagem no canto superior direito da IAC
-                      if (widget.pdfBoundingBox != null && settings.isIacVisible)
+                      if (settings.isIacVisible && settings.iacBoundingBox != null)
                         Marker(
                           point: LatLng(
-                            widget.pdfBoundingBox!['north']!,
-                            widget.pdfBoundingBox!['east']!,
+                            settings.iacBoundingBox!['north']!,
+                            settings.iacBoundingBox!['east']!,
                           ),
                           width: 30,
                           height: 30,
@@ -334,38 +305,25 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
                 ],
               ),
               
-              if (_isRenderingPdf)
-                Container(
-                  color: Colors.black45,
-                  child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(color: AppColors.accent),
-                        SizedBox(height: 16),
-                        Text(
-                          'Renderizando Carta IAC...',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+              if (_currentLocation != null && !_isFollowing)
+                Positioned(
+                  bottom: 20,
+                  right: 20,
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      setState(() {
+                        _isFollowing = true;
+                      });
+                      _updateMapCamera();
+                    },
+                    backgroundColor: AppColors.accent,
+                    child: const Icon(Icons.my_location, color: Colors.white),
                   ),
                 ),
             ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _isFollowing = true;
-          });
-          _updateMapCamera();
-        },
-        backgroundColor: _isFollowing ? AppColors.accent : AppColors.disabled,
-        child: const Icon(Icons.my_location, color: Colors.white),
-      ),
+          ),
+        );
+      },
     );
   }
 }
-

@@ -6,9 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/screens/main_screen.dart';
-import 'package:navbr/screens/wac_map_screen.dart';
-import 'package:navbr/screens/iac_map_screen.dart';
-import 'package:navbr/screens/navigation_map_screen.dart';
 import 'package:navbr/services/download_service.dart';
 import 'package:navbr/services/geotiff_parser.dart';
 import 'package:navbr/services/geopdf_parser.dart';
@@ -60,7 +57,9 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const MainScreen(chartsTab: InitializationScreen()),
+      home: MainScreen(
+        chartsTabBuilder: (onNavigate) => InitializationScreen(onNavigateToMap: onNavigate),
+      ),
     );
   }
 }
@@ -68,7 +67,9 @@ class MyApp extends StatelessWidget {
 /// InitializationScreen
 /// Tela de boas-vindas e gerenciamento de download de cartas.
 class InitializationScreen extends StatefulWidget {
-  const InitializationScreen({super.key});
+  final VoidCallback onNavigateToMap;
+
+  const InitializationScreen({super.key, required this.onNavigateToMap});
 
   @override
   State<InitializationScreen> createState() => _InitializationScreenState();
@@ -79,10 +80,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
   String _status = '';
   
   String? _savedTiffPath;
-  Map<String, double>? _savedTiffBoundingBox;
-  
   String? _savedPdfPath;
-  Map<String, double>? _savedPdfBoundingBox;
 
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
@@ -99,52 +97,24 @@ class _InitializationScreenState extends State<InitializationScreen> {
     // Check WAC
     final savedTiffPath = prefs.getString('saved_wac_path');
     if (savedTiffPath != null && File(savedTiffPath).existsSync()) {
-      final north = prefs.getDouble('saved_wac_north');
-      final south = prefs.getDouble('saved_wac_south');
-      final east = prefs.getDouble('saved_wac_east');
-      final west = prefs.getDouble('saved_wac_west');
-
-      if (north != null && south != null && east != null && west != null) {
-        setState(() {
-          _savedTiffPath = savedTiffPath;
-          _savedTiffBoundingBox = {
-            'north': north,
-            'south': south,
-            'east': east,
-            'west': west,
-          };
-        });
-      }
+      setState(() {
+        _savedTiffPath = savedTiffPath;
+      });
     } else {
       setState(() {
         _savedTiffPath = null;
-        _savedTiffBoundingBox = null;
       });
     }
     
     // Check IAC
     final savedPdfPath = prefs.getString('saved_iac_path');
     if (savedPdfPath != null && File(savedPdfPath).existsSync()) {
-      final north = prefs.getDouble('saved_iac_north');
-      final south = prefs.getDouble('saved_iac_south');
-      final east = prefs.getDouble('saved_iac_east');
-      final west = prefs.getDouble('saved_iac_west');
-
-      if (north != null && south != null && east != null && west != null) {
-        setState(() {
-          _savedPdfPath = savedPdfPath;
-          _savedPdfBoundingBox = {
-            'north': north,
-            'south': south,
-            'east': east,
-            'west': west,
-          };
-        });
-      }
+      setState(() {
+        _savedPdfPath = savedPdfPath;
+      });
     } else {
       setState(() {
         _savedPdfPath = null;
-        _savedPdfBoundingBox = null;
       });
     }
   }
@@ -327,15 +297,9 @@ class _InitializationScreenState extends State<InitializationScreen> {
                   subtitle: 'World Aeronautical Chart - Raster',
                   path: _savedTiffPath,
                   onDownload: _startWacPoC,
-                  onOpen: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => WacMapScreen(
-                          tiffPath: _savedTiffPath!,
-                          boundingBox: _savedTiffBoundingBox!,
-                        ),
-                      ),
-                    );
+                  onOpen: () async {
+                    await Provider.of<ChartSettingsProvider>(context, listen: false).refreshCharts();
+                    widget.onNavigateToMap();
                   },
                   color: AppColors.wacButton,
                 ),
@@ -348,15 +312,9 @@ class _InitializationScreenState extends State<InitializationScreen> {
                   subtitle: 'Instrument Approach Chart - PDF',
                   path: _savedPdfPath,
                   onDownload: _startIacPoC,
-                  onOpen: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => IacMapScreen(
-                          pdfPath: _savedPdfPath!,
-                          boundingBox: _savedPdfBoundingBox!,
-                        ),
-                      ),
-                    );
+                  onOpen: () async {
+                    await Provider.of<ChartSettingsProvider>(context, listen: false).refreshCharts();
+                    widget.onNavigateToMap();
                   },
                   color: AppColors.iacButton,
                   isIac: true,
@@ -402,17 +360,9 @@ class _InitializationScreenState extends State<InitializationScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => NavigationMapScreen(
-                      tiffPath: _savedTiffPath,
-                      tiffBoundingBox: _savedTiffBoundingBox,
-                      pdfPath: _savedPdfPath,
-                      pdfBoundingBox: _savedPdfBoundingBox,
-                    ),
-                  ),
-                );
+              onPressed: () async {
+                await Provider.of<ChartSettingsProvider>(context, listen: false).refreshCharts();
+                widget.onNavigateToMap();
               },
               icon: const Icon(Icons.map),
               label: const Text('ABRIR NAVEGAÇÃO'),

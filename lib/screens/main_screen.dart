@@ -3,13 +3,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:navbr/theme/app_colors.dart';
+import 'package:navbr/screens/navigation_map_screen.dart';
 
 /// MainScreen
 /// Gerencia a navegação principal do aplicativo através de um BottomNavigationBar persistente.
 class MainScreen extends StatefulWidget {
-  final Widget chartsTab;
+  final Widget Function(VoidCallback onNavigateToMap) chartsTabBuilder;
 
-  const MainScreen({super.key, required this.chartsTab});
+  const MainScreen({super.key, required this.chartsTabBuilder});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -19,13 +20,13 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 2; // Começa na aba "Cartas"
 
   // Chaves para os navegadores de cada aba para manter o estado e persistência
-  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-  ];
+  final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(5, (_) => GlobalKey<NavigatorState>());
+
+  void _navigateToMap() {
+    setState(() {
+      _currentIndex = 1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +39,9 @@ class _MainScreenState extends State<MainScreen> {
         if (currentNavigator != null && currentNavigator.canPop()) {
           currentNavigator.pop();
         } else if (_currentIndex != 2) {
-          // Se não estiver na aba inicial (Cartas), volta para ela antes de sair
           setState(() {
             _currentIndex = 2;
           });
-        } else {
-          // Se estiver na aba inicial e não puder dar pop, permite fechar o app (ou avisa o sistema)
-          // No Flutter 3.16+, PopScope com canPop: false e depois SystemNavigator.pop() ou similar
-          // Aqui, como queremos permitir a saída se não houver mais histórico:
-          // Implementação simplificada: se não puder dar pop no navegador atual, fecha o app.
         }
       },
       child: Scaffold(
@@ -54,8 +49,8 @@ class _MainScreenState extends State<MainScreen> {
           index: _currentIndex,
           children: [
             _buildTabNavigator(0, const PlaceholderScreen(title: 'Aeroportos', icon: Icons.local_airport)),
-            _buildTabNavigator(1, const PlaceholderScreen(title: 'Map/Nav', icon: Icons.map)),
-            _buildTabNavigator(2, widget.chartsTab),
+            _buildTabNavigator(1, const NavigationMapScreen()),
+            _buildTabNavigator(2, widget.chartsTabBuilder(_navigateToMap)),
             _buildTabNavigator(3, const PlaceholderScreen(title: 'Voos', icon: Icons.flight_takeoff)),
             _buildTabNavigator(4, const PlaceholderScreen(title: 'Opções', icon: Icons.settings)),
           ],
@@ -74,7 +69,6 @@ class _MainScreenState extends State<MainScreen> {
             currentIndex: _currentIndex,
             onTap: (index) {
               if (index == _currentIndex) {
-                // Se tocar na aba atual, volta para o início dela (pop until first)
                 _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
               } else {
                 setState(() {
@@ -86,10 +80,7 @@ class _MainScreenState extends State<MainScreen> {
             backgroundColor: AppColors.black,
             selectedItemColor: Colors.white,
             unselectedItemColor: Colors.white.withAlpha(150),
-            selectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
             unselectedLabelStyle: const TextStyle(fontSize: 12),
             items: const [
               BottomNavigationBarItem(
@@ -100,7 +91,7 @@ class _MainScreenState extends State<MainScreen> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.map_outlined),
                 activeIcon: Icon(Icons.map),
-                label: 'Mapas',
+                label: 'Map/Nav',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.layers_outlined),
@@ -128,9 +119,7 @@ class _MainScreenState extends State<MainScreen> {
     return Navigator(
       key: _navigatorKeys[index],
       onGenerateRoute: (routeSettings) {
-        return MaterialPageRoute(
-          builder: (context) => child,
-        );
+        return MaterialPageRoute(builder: (context) => child);
       },
     );
   }
@@ -155,10 +144,7 @@ class PlaceholderScreen extends StatelessWidget {
             Text(
               'Tela de $title\n(Em desenvolvimento)',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
             ),
           ],
         ),
