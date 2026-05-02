@@ -44,4 +44,10 @@ class AppColors {
   
   // Tons de cinza para estados desabilitados
   static const Color disabled = Color(0xFFBDBDBD);
+
+  // Cockpit — barra de navegação escura (tela Map/Nav e futuras telas de voo)
+  static const Color cockpitBackground = Color(0xFF1C1C1E);
+  static const Color cockpitSurface = Color(0xFF2C2C2E);
+  static const Color cockpitDivider = Color(0xFF3A3A3C);
+  static const Color cockpitLabel = Color(0xFF8E8E93);
 }
