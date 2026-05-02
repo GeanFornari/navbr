@@ -47,22 +47,62 @@ class MainShell extends ConsumerWidget {
                   const SizedBox(height: 24),
                   Card(
                     color: context.theme.customSurface,
-                    child: ListTile(
-                      leading: Icon(
-                        ref.watch(themeProvider) == ThemeMode.dark 
-                            ? Icons.dark_mode 
-                            : Icons.light_mode,
-                        color: context.theme.customTextPrimary,
-                      ),
-                      title: Text(
-                        'Modo Escuro',
-                        style: TextStyle(color: context.theme.customTextPrimary),
-                      ),
-                      trailing: Switch(
-                        value: ref.watch(themeProvider) == ThemeMode.dark,
-                        onChanged: (value) {
-                          ref.read(themeProvider.notifier).toggleTheme();
-                        },
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.brightness_medium,
+                                color: context.theme.customTextPrimary,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Aparência',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: context.theme.customTextPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SegmentedButton<ThemeMode>(
+                            segments: const [
+                              ButtonSegment<ThemeMode>(
+                                value: ThemeMode.system,
+                                label: Text(
+                                  'Sistema',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                              ButtonSegment<ThemeMode>(
+                                value: ThemeMode.light,
+                                label: Text(
+                                  'Claro',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                              ButtonSegment<ThemeMode>(
+                                value: ThemeMode.dark,
+                                label: Text(
+                                  'Escuro',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
+                            selected: <ThemeMode>{ref.watch(themeProvider)},
+                            onSelectionChanged: (Set<ThemeMode> newSelection) {
+                              ref
+                                  .read(themeProvider.notifier)
+                                  .setTheme(newSelection.first);
+                            },
+                            showSelectedIcon: false,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -74,13 +114,13 @@ class MainShell extends ConsumerWidget {
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1.0, 0.0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
+          position:
+              Tween<Offset>(
+                begin: const Offset(1.0, 0.0),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
           child: child,
         );
       },
@@ -102,7 +142,9 @@ class MainShell extends ConsumerWidget {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: navigationShell.currentIndex == 4 ? 1 : navigationShell.currentIndex,
+          currentIndex: navigationShell.currentIndex == 4
+              ? 1
+              : navigationShell.currentIndex,
           onTap: (index) {
             if (index == 4) {
               _showSideSheet(context, ref);
@@ -114,10 +156,16 @@ class MainShell extends ConsumerWidget {
             }
           },
           type: BottomNavigationBarType.fixed,
-          backgroundColor: context.theme.bottomNavigationBarTheme.backgroundColor,
-          selectedItemColor: context.theme.bottomNavigationBarTheme.selectedItemColor,
-          unselectedItemColor: context.theme.bottomNavigationBarTheme.unselectedItemColor,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          backgroundColor:
+              context.theme.bottomNavigationBarTheme.backgroundColor,
+          selectedItemColor:
+              context.theme.bottomNavigationBarTheme.selectedItemColor,
+          unselectedItemColor:
+              context.theme.bottomNavigationBarTheme.unselectedItemColor,
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
           items: const [
             BottomNavigationBarItem(
