@@ -29,32 +29,34 @@ class ChartsViewScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: context.theme.customBackground,
-      body: Row(
-        children: [
-          // Menu Lateral Esquerdo (Sidebar)
-          Container(
-            width: sidebarWidth,
-            color: AppColors.cockpitBackground,
-            child: const Column(
-              children: [
-                // Conteúdo futuro do menu lateral
-              ],
+      body: SafeArea(
+        child: Row(
+          children: [
+            // Menu Lateral Esquerdo (Sidebar)
+            Container(
+              width: sidebarWidth,
+              color: AppColors.cockpitBackground,
+              child: const Column(
+                children: [
+                  // Conteúdo futuro do menu lateral
+                ],
+              ),
             ),
-          ),
-          // Área de Conteúdo Principal
-          Expanded(
-            child: Column(
-              children: [
-                _buildTopBar(),
-                const Expanded(
-                  child: Center(
-                    child: SizedBox(), // Vazio por enquanto conforme solicitado
+            // Área de Conteúdo Principal
+            Expanded(
+              child: Column(
+                children: [
+                  _buildTopBar(),
+                  const Expanded(
+                    child: Center(
+                      child: SizedBox(), // Vazio por enquanto conforme solicitado
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
