@@ -58,24 +58,21 @@ const _tipoToCategory = {
   'vac': 'Cartas de Aeródromos',
   'cv': 'Cartas de Aeródromos',
   'lc': 'Cartas de Aeródromos',
-  'arc': 'ARC',
+  'arc': 'Cartas IFR',
   'rea': 'Cartas VFR',
   'reh': 'Cartas VFR',
   'reul': 'Cartas VFR',
   'wac': 'Cartas VFR',
-  'enrc': 'ENRC L',
-  'enrcl': 'ENRC L',
-  'enrch': 'ENRC H',
-  'reast': 'REAST',
+  'enrc': 'Cartas IFR',
+  'enrcl': 'Cartas IFR',
+  'enrch': 'Cartas IFR',
+  'reast': 'Cartas IFR',
 };
 
 const _categoryOrder = [
   'Cartas de Aeródromos',
   'Cartas VFR',
-  'ARC',
-  'ENRC L',
-  'ENRC H',
-  'REAST',
+  'Cartas IFR',
 ];
 
 class _UIGroup {
@@ -250,26 +247,30 @@ class ChartsDownloadScreen extends ConsumerWidget {
       ];
     }
 
-    if (enrclGroups.isNotEmpty) {
-      byCategory['ENRC L'] = [
-        _UIGroup(
-          key: 'enrc_l_todas',
-          title: 'ENRC L',
-          subtitle: 'En-Route Chart (Baixa Altitude)',
-          originalGroups: enrclGroups,
-        ),
-      ];
+    if (enrchGroups.isNotEmpty || enrclGroups.isNotEmpty) {
+      byCategory.putIfAbsent('Cartas IFR', () => []);
     }
 
     if (enrchGroups.isNotEmpty) {
-      byCategory['ENRC H'] = [
+      byCategory['Cartas IFR']!.add(
         _UIGroup(
           key: 'enrc_h_todas',
           title: 'ENRC H',
           subtitle: 'En-Route Chart (Alta Altitude)',
           originalGroups: enrchGroups,
         ),
-      ];
+      );
+    }
+
+    if (enrclGroups.isNotEmpty) {
+      byCategory['Cartas IFR']!.add(
+        _UIGroup(
+          key: 'enrc_l_todas',
+          title: 'ENRC L',
+          subtitle: 'En-Route Chart (Baixa Altitude)',
+          originalGroups: enrclGroups,
+        ),
+      );
     }
 
     for (final group in otherGroups) {
@@ -290,6 +291,21 @@ class ChartsDownloadScreen extends ConsumerWidget {
         final bType = b.originalGroups.first.tipo;
         final aIndex = vfrOrder.indexOf(aType);
         final bIndex = vfrOrder.indexOf(bType);
+        return (aIndex == -1 ? 99 : aIndex).compareTo(bIndex == -1 ? 99 : bIndex);
+      });
+    }
+
+    if (byCategory['Cartas IFR'] != null) {
+      final ifrOrder = ['enrch', 'enrcl', 'arc', 'reast'];
+      byCategory['Cartas IFR']!.sort((a, b) {
+        final aType = a.key.startsWith('enrc_h') ? 'enrch' : 
+                      a.key.startsWith('enrc_l') ? 'enrcl' : 
+                      a.originalGroups.first.tipo;
+        final bType = b.key.startsWith('enrc_h') ? 'enrch' : 
+                      b.key.startsWith('enrc_l') ? 'enrcl' : 
+                      b.originalGroups.first.tipo;
+        final aIndex = ifrOrder.indexOf(aType);
+        final bIndex = ifrOrder.indexOf(bType);
         return (aIndex == -1 ? 99 : aIndex).compareTo(bIndex == -1 ? 99 : bIndex);
       });
     }
