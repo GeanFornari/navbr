@@ -11,6 +11,7 @@ import 'package:navbr/services/geotiff_parser.dart';
 import 'package:navbr/services/geopdf_parser.dart';
 import 'package:navbr/services/aisweb_api_service.dart';
 import 'package:navbr/theme/app_colors.dart';
+import 'package:navbr/screens/charts_download_screen.dart';
 import 'package:navbr/widgets/chart_settings_banner.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,7 +59,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: MainScreen(
-        chartsTabBuilder: (onNavigate) => InitializationScreen(onNavigateToMap: onNavigate),
+        chartsTabBuilder: (_) => const ChartsDownloadScreen(),
       ),
     );
   }
