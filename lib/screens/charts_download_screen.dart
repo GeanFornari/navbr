@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/r2_manifest.dart';
 import '../providers/charts_download_provider.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 
 const _tipoLabels = {
   'adc': 'ADC',
@@ -115,14 +115,15 @@ class ChartsDownloadScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(state, notifier),
-          Expanded(child: _buildContent(state, notifier)),
+          _buildHeader(context, state, notifier),
+          Expanded(child: _buildContent(context, state, notifier)),
         ],
       ),
     );
   }
 
   Widget _buildHeader(
+    BuildContext context,
     ChartsDownloadState state,
     ChartsDownloadNotifier notifier,
   ) {
@@ -134,27 +135,27 @@ class ChartsDownloadScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Cartas Aeronáuticas',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: context.theme.customTextPrimary,
                   ),
                 ),
                 if (state.manifest != null)
                   Text(
                     'Ciclo AIRAC: ${state.manifest!.emenda}  ·  ${state.manifest!.downloaded} cartas',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppColors.textSecondary,
+                      color: context.theme.customTextSecondary,
                     ),
                   ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.textSecondary),
+            icon: Icon(Icons.refresh, color: context.theme.customTextSecondary),
             onPressed: state.loading ? null : () => notifier.refresh(),
           ),
         ],
@@ -163,19 +164,20 @@ class ChartsDownloadScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(
+    BuildContext context,
     ChartsDownloadState state,
     ChartsDownloadNotifier notifier,
   ) {
     if (state.loading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: AppColors.accent),
-            SizedBox(height: 16),
+            CircularProgressIndicator(color: context.theme.accent),
+            const SizedBox(height: 16),
             Text(
               'Carregando catálogo...',
-              style: TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: context.theme.customTextSecondary),
             ),
           ],
         ),
@@ -189,22 +191,22 @@ class ChartsDownloadScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off, size: 48, color: AppColors.disabled),
+              Icon(Icons.cloud_off, size: 48, color: context.theme.disabled),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Catálogo indisponível',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: context.theme.customTextPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 state.error!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.theme.customTextSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -339,29 +341,29 @@ class ChartsDownloadScreen extends ConsumerWidget {
       children: [
         for (final cat in _categoryOrder)
           if (byCategory[cat] != null) ...[
-            _buildSectionHeader(cat),
+            _buildSectionHeader(context, cat),
             for (final group in byCategory[cat]!)
-              _buildGroupTile(group, state, notifier),
+              _buildGroupTile(context, group, state, notifier),
           ],
         for (final cat in byCategory.keys)
           if (!_categoryOrder.contains(cat)) ...[
-            _buildSectionHeader(cat),
+            _buildSectionHeader(context, cat),
             for (final group in byCategory[cat]!)
-              _buildGroupTile(group, state, notifier),
+              _buildGroupTile(context, group, state, notifier),
           ],
       ],
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,
-          color: AppColors.textSecondary,
+          color: context.theme.customTextSecondary,
           letterSpacing: 1.4,
         ),
       ),
@@ -369,6 +371,7 @@ class ChartsDownloadScreen extends ConsumerWidget {
   }
 
   Widget _buildGroupTile(
+    BuildContext context,
     _UIGroup uiGroup,
     ChartsDownloadState state,
     ChartsDownloadNotifier notifier,
@@ -388,13 +391,13 @@ class ChartsDownloadScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Card(
         elevation: 0,
-        color: AppColors.surface,
+        color: context.theme.customSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: isComplete
-                ? AppColors.success.withAlpha(80)
-                : AppColors.disabled.withAlpha(50),
+                ? context.theme.success.withAlpha(80)
+                : context.theme.disabled.withAlpha(50),
           ),
         ),
         child: Padding(
@@ -407,12 +410,12 @@ class ChartsDownloadScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isDownloading
-                      ? AppColors.accent
+                      ? context.theme.accent
                       : isComplete
-                      ? AppColors.success
+                      ? context.theme.success
                       : isPartial
-                      ? AppColors.warning
-                      : AppColors.disabled,
+                      ? context.theme.warning
+                      : context.theme.disabled,
                 ),
               ),
               const SizedBox(width: 12),
@@ -429,10 +432,10 @@ class ChartsDownloadScreen extends ConsumerWidget {
                     children: [
                       Text(
                         '${uiGroup.title}  —  ${uiGroup.subtitle}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: AppColors.textPrimary,
+                          color: context.theme.customTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -441,9 +444,9 @@ class ChartsDownloadScreen extends ConsumerWidget {
                         child: LinearProgressIndicator(
                           value: sliderValue,
                           minHeight: 6,
-                          backgroundColor: AppColors.disabled.withAlpha(50),
+                          backgroundColor: context.theme.disabled.withAlpha(50),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            isComplete ? AppColors.success : AppColors.accent,
+                            isComplete ? context.theme.success : context.theme.accent,
                           ),
                         ),
                       ),
@@ -453,16 +456,16 @@ class ChartsDownloadScreen extends ConsumerWidget {
                         children: [
                           Text(
                             _formatSize(uiGroup.totalSize),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: context.theme.customTextSecondary,
                             ),
                           ),
                           Text(
                             '$currentCount/$total',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: context.theme.customTextSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -474,18 +477,18 @@ class ChartsDownloadScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               if (isDownloading)
-                const SizedBox(
+                SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.accent,
+                    color: context.theme.accent,
                   ),
                 )
               else if (isComplete)
-                const Icon(
+                Icon(
                   Icons.check_circle,
-                  color: AppColors.success,
+                  color: context.theme.success,
                   size: 22,
                 )
               else

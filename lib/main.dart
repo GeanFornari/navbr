@@ -10,6 +10,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:navbr/firebase_options.dart';
 import 'package:navbr/providers/chart_settings_provider.dart';
+import 'package:navbr/providers/theme_provider.dart';
 import 'package:navbr/router/app_router.dart';
 import 'package:navbr/services/database_service.dart';
 import 'package:navbr/services/download_service.dart';
@@ -17,6 +18,7 @@ import 'package:navbr/services/geotiff_parser.dart';
 import 'package:navbr/services/geopdf_parser.dart';
 import 'package:navbr/services/aisweb_api_service.dart';
 import 'package:navbr/theme/app_colors.dart';
+import 'package:navbr/theme/app_theme.dart';
 import 'package:navbr/widgets/chart_settings_banner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,37 +40,21 @@ Future<void> main() async {
 }
 
 /// MyApp
-/// Widget raiz da aplicação que configura o tema global baseado em AppColors.
-class MyApp extends StatelessWidget {
+/// Widget raiz da aplicação que configura o tema global baseado em AppTheme.
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp.router(
       title: 'AISBR Sandbox',
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          primary: AppColors.primary,
-          secondary: AppColors.secondary,
-          surface: AppColors.surface,
-        ),
-        scaffoldBackgroundColor: AppColors.background,
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.surface,
-          elevation: 0,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
     );
   }
 }

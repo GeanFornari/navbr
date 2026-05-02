@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:navbr/theme/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:navbr/theme/app_theme.dart';
+import 'package:navbr/providers/theme_provider.dart';
 
-class MainShell extends StatelessWidget {
+class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const MainShell({required this.navigationShell, super.key});
 
-  void _showSideSheet(BuildContext context) {
+  void _showSideSheet(BuildContext context, WidgetRef ref) {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -17,24 +19,53 @@ class MainShell extends StatelessWidget {
         return Align(
           alignment: Alignment.centerRight,
           child: Material(
-            color: AppColors.background,
+            color: context.theme.customBackground,
             child: Container(
               width: 300,
               height: double.infinity,
               padding: const EdgeInsets.only(top: 50, left: 16, right: 16),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Opções',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Opções',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: context.theme.customTextPrimary,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Card(
+                    color: context.theme.customSurface,
+                    child: ListTile(
+                      leading: Icon(
+                        ref.watch(themeProvider) == ThemeMode.dark 
+                            ? Icons.dark_mode 
+                            : Icons.light_mode,
+                        color: context.theme.customTextPrimary,
+                      ),
+                      title: Text(
+                        'Modo Escuro',
+                        style: TextStyle(color: context.theme.customTextPrimary),
+                      ),
+                      trailing: Switch(
+                        value: ref.watch(themeProvider) == ThemeMode.dark,
+                        onChanged: (value) {
+                          ref.read(themeProvider.notifier).toggleTheme();
+                        },
+                      ),
                     ),
                   ),
-                  SizedBox(height: 24),
-                  // Em breve aqui virão as opções e configurações
                 ],
               ),
             ),
@@ -57,14 +88,14 @@ class MainShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: AppColors.black.withAlpha(20),
+              color: Colors.black.withAlpha(20),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -74,7 +105,7 @@ class MainShell extends StatelessWidget {
           currentIndex: navigationShell.currentIndex == 4 ? 1 : navigationShell.currentIndex,
           onTap: (index) {
             if (index == 4) {
-              _showSideSheet(context);
+              _showSideSheet(context, ref);
             } else {
               navigationShell.goBranch(
                 index,
@@ -83,9 +114,9 @@ class MainShell extends StatelessWidget {
             }
           },
           type: BottomNavigationBarType.fixed,
-          backgroundColor: AppColors.black,
-          selectedItemColor: AppColors.white,
-          unselectedItemColor: AppColors.white.withAlpha(150),
+          backgroundColor: context.theme.bottomNavigationBarTheme.backgroundColor,
+          selectedItemColor: context.theme.bottomNavigationBarTheme.selectedItemColor,
+          unselectedItemColor: context.theme.bottomNavigationBarTheme.unselectedItemColor,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
           items: const [
@@ -137,10 +168,10 @@ class PlaceholderScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.theme.customTextPrimary,
               ),
             ),
           ),
@@ -149,13 +180,13 @@ class PlaceholderScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, size: 64, color: AppColors.disabled),
+                  Icon(icon, size: 64, color: context.theme.disabled),
                   const SizedBox(height: 16),
                   Text(
                     'Tela de $title\n(Em desenvolvimento)',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: context.theme.customTextSecondary,
                       fontSize: 16,
                     ),
                   ),
