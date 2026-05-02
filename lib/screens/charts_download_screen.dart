@@ -230,12 +230,30 @@ class ChartsDownloadScreen extends ConsumerWidget {
     final otherGroups = <R2ChartGroup>[];
 
     for (final group in state.manifest!.groups) {
+      if (group.tipo == 'enrc') {
+        // Separa as cartas ENRC em H e L baseado no nome do arquivo
+        final hFiles = group.files.where((f) => f.filename.contains('enrc-h')).toList();
+        final lFiles = group.files.where((f) => f.filename.contains('enrc-l')).toList();
+        final otherEnrcFiles = group.files.where((f) => !f.filename.contains('enrc-h') && !f.filename.contains('enrc-l')).toList();
+
+        if (hFiles.isNotEmpty) {
+          enrchGroups.add(R2ChartGroup(especie: group.especie, tipo: 'enrch', files: hFiles));
+        }
+        if (lFiles.isNotEmpty) {
+          enrclGroups.add(R2ChartGroup(especie: group.especie, tipo: 'enrcl', files: lFiles));
+        }
+        if (otherEnrcFiles.isNotEmpty) {
+          otherGroups.add(R2ChartGroup(especie: group.especie, tipo: 'enrc', files: otherEnrcFiles));
+        }
+        continue;
+      }
+
       final cat = _tipoToCategory[group.tipo] ?? group.tipo.toUpperCase();
       if (cat == 'Cartas de Aeródromos') {
         adGroups.add(group);
       } else if (group.tipo == 'enrch' || group.tipo == 'enrc_h' || group.key.contains('enrch') || group.key.contains('enrc_h')) {
         enrchGroups.add(group);
-      } else if (group.tipo == 'enrcl' || group.tipo == 'enrc_l' || group.tipo == 'enrc' || group.key.contains('enrcl') || group.key.contains('enrc_l')) {
+      } else if (group.tipo == 'enrcl' || group.tipo == 'enrc_l' || group.key.contains('enrcl') || group.key.contains('enrc_l')) {
         enrclGroups.add(group);
       } else {
         otherGroups.add(group);
