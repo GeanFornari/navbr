@@ -1,9 +1,23 @@
+// ignore_for_file: dangling_library_doc_comments
+// Contém código gerado por IA
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:navbr/theme/app_theme.dart';
 import 'package:navbr/providers/theme_provider.dart';
 
+/// MainShell
+/// Widget principal que envolve a navegação do aplicativo com uma BottomNavigationBar
+/// e um menu lateral de opções.
+///
+/// Classes presentes:
+/// - MainShell: Gerencia a estrutura principal de navegação.
+/// - PlaceholderScreen: Tela temporária para abas em desenvolvimento.
+///
+/// Métodos presentes:
+/// - _showSideSheet: Exibe o menu lateral de opções (configurações).
+/// - build: Constrói a interface da shell.
 class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -104,6 +118,32 @@ class MainShell extends ConsumerWidget {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    color: context.theme.customSurface,
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.layers,
+                        color: context.theme.customTextPrimary,
+                      ),
+                      title: Text(
+                        'Gerenciar Cartas',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: context.theme.customTextPrimary,
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: context.theme.customTextSecondary,
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        navigationShell.goBranch(2);
+                      },
                     ),
                   ),
                 ],
