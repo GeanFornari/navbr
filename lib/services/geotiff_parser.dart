@@ -39,7 +39,8 @@ class GeoTiffParser {
       
       for (var i = 0; i < numDirEntries; i++) {
         final tag = isLittleEndian ? data.getUint16(ifdOffset, Endian.little) : data.getUint16(ifdOffset, Endian.big);
-        final type = isLittleEndian ? data.getUint16(ifdOffset + 2, Endian.little) : data.getUint16(ifdOffset + 2, Endian.big);
+        // field type (unused — only tag, count, and valueOffset are needed)
+        data.getUint16(ifdOffset + 2, isLittleEndian ? Endian.little : Endian.big);
         final count = isLittleEndian ? data.getUint32(ifdOffset + 4, Endian.little) : data.getUint32(ifdOffset + 4, Endian.big);
         final valueOffset = isLittleEndian ? data.getUint32(ifdOffset + 8, Endian.little) : data.getUint32(ifdOffset + 8, Endian.big);
         

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "448886352889",
+    "project_id": "navbr-app",
+    "storage_bucket": "navbr-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:448886352889:android:ce34f0c87f28a7f9856b28",
+        "android_client_info": {
+          "package_name": "com.example.navbr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBElOIPWa-FLwdlhF2PnjuFeux9vzWGe4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

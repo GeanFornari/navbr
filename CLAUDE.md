@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## User Profile
+
+- **User Role**: Administrator
+- **Knowledge**: Aviation Professional
+- **Development Experience**: 6 months, Newbie
+- **Language**: 
+    - English: Intermediate
+    - Portuguese: Native
+
+
+## Code Style
+- **Formatting**: Use `dart format` (not `clang_format`)
+- **Linting**: Fix all lint errors before committing
+
 ## UI Constraints
 
 **Never use `AppBar`.** All existing `AppBar`s in the codebase are pending replacement with a custom solution. Do not add new ones under any circumstances.

@@ -2,16 +2,19 @@
 // Contém código gerado por IA
 
 import 'dart:io';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:navbr/firebase_options.dart';
 import 'package:navbr/providers/chart_settings_provider.dart';
-import 'package:navbr/screens/main_screen.dart';
+import 'package:navbr/router/app_router.dart';
 import 'package:navbr/services/download_service.dart';
 import 'package:navbr/services/geotiff_parser.dart';
 import 'package:navbr/services/geopdf_parser.dart';
 import 'package:navbr/services/aisweb_api_service.dart';
 import 'package:navbr/theme/app_colors.dart';
-import 'package:navbr/screens/charts_download_screen.dart';
 import 'package:navbr/widgets/chart_settings_banner.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +22,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -29,9 +38,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'AISBR Sandbox',
       debugShowCheckedModeBanner: false,
+      routerConfig: appRouter,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
@@ -52,9 +62,6 @@ class MyApp extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
-      ),
-      home: MainScreen(
-        chartsTabBuilder: (_) => const ChartsDownloadScreen(),
       ),
     );
   }
