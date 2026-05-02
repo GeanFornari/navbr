@@ -13,18 +13,13 @@ import 'package:navbr/services/aisweb_api_service.dart';
 import 'package:navbr/theme/app_colors.dart';
 import 'package:navbr/screens/charts_download_screen.dart';
 import 'package:navbr/widgets/chart_settings_banner.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ChartSettingsProvider(),
-      child: const MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 /// MyApp
@@ -67,16 +62,16 @@ class MyApp extends StatelessWidget {
 
 /// InitializationScreen
 /// Tela de boas-vindas e gerenciamento de download de cartas.
-class InitializationScreen extends StatefulWidget {
+class InitializationScreen extends ConsumerStatefulWidget {
   final VoidCallback onNavigateToMap;
 
   const InitializationScreen({super.key, required this.onNavigateToMap});
 
   @override
-  State<InitializationScreen> createState() => _InitializationScreenState();
+  ConsumerState<InitializationScreen> createState() => _InitializationScreenState();
 }
 
-class _InitializationScreenState extends State<InitializationScreen> {
+class _InitializationScreenState extends ConsumerState<InitializationScreen> {
   bool _isLoading = false;
   String _status = '';
   
@@ -299,7 +294,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
                   path: _savedTiffPath,
                   onDownload: _startWacPoC,
                   onOpen: () async {
-                    await Provider.of<ChartSettingsProvider>(context, listen: false).refreshCharts();
+                    await ref.read(chartSettingsProvider.notifier).refresh();
                     widget.onNavigateToMap();
                   },
                   color: AppColors.wacButton,
@@ -314,7 +309,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
                   path: _savedPdfPath,
                   onDownload: _startIacPoC,
                   onOpen: () async {
-                    await Provider.of<ChartSettingsProvider>(context, listen: false).refreshCharts();
+                    await ref.read(chartSettingsProvider.notifier).refresh();
                     widget.onNavigateToMap();
                   },
                   color: AppColors.iacButton,
@@ -362,7 +357,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () async {
-                await Provider.of<ChartSettingsProvider>(context, listen: false).refreshCharts();
+                await ref.read(chartSettingsProvider.notifier).refresh();
                 widget.onNavigateToMap();
               },
               icon: const Icon(Icons.map),

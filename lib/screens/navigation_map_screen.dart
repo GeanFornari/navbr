@@ -12,20 +12,20 @@ import 'package:navbr/services/gps_service.dart';
 import 'package:navbr/theme/app_colors.dart';
 import 'package:navbr/widgets/chart_settings_banner.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum MapOrientation { northUp, trackUp }
 
 /// NavigationMapScreen
 /// Tela principal de navegação que consome dados do ChartSettingsProvider.
-class NavigationMapScreen extends StatefulWidget {
+class NavigationMapScreen extends ConsumerStatefulWidget {
   const NavigationMapScreen({super.key});
 
   @override
-  State<NavigationMapScreen> createState() => _NavigationMapScreenState();
+  ConsumerState<NavigationMapScreen> createState() => _NavigationMapScreenState();
 }
 
-class _NavigationMapScreenState extends State<NavigationMapScreen> {
+class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
   final _gps = GpsService();
   final MapController _mapController = MapController();
 
@@ -174,56 +174,56 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ChartSettingsProvider>(
-      builder: (context, settings, child) {
-        if (settings.iacPath != null && settings.iacPath != _lastIacPath) {
-          _renderPdfToImage(settings.iacPath!);
-        }
+    final settings = ref.watch(chartSettingsProvider);
 
-        LatLngBounds? initialBounds;
-        if (settings.wacPath != null && settings.wacBoundingBox != null) {
-          initialBounds = LatLngBounds(
-            LatLng(settings.wacBoundingBox!['south']!, settings.wacBoundingBox!['west']!),
-            LatLng(settings.wacBoundingBox!['north']!, settings.wacBoundingBox!['east']!),
-          );
-        }
+    if (settings.iacPath != null && settings.iacPath != _lastIacPath) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _renderPdfToImage(settings.iacPath!);
+      });
+    }
 
-        return Scaffold(
-          body: Stack(
-            children: [
-              // ── Mapa (tela cheia) ────────────────────────────────────────
-              _buildMap(settings, initialBounds),
+    LatLngBounds? initialBounds;
+    if (settings.wacPath != null && settings.wacBoundingBox != null) {
+      initialBounds = LatLngBounds(
+        LatLng(settings.wacBoundingBox!['south']!, settings.wacBoundingBox!['west']!),
+        LatLng(settings.wacBoundingBox!['north']!, settings.wacBoundingBox!['east']!),
+      );
+    }
 
-              // ── Barra superior ───────────────────────────────────────────
-              Positioned(
-                top: 0, left: 0, right: 0,
-                child: _buildTopBar(),
-              ),
+    return Scaffold(
+      body: Stack(
+        children: [
+          // ── Mapa (tela cheia) ────────────────────────────────────────
+          _buildMap(settings, initialBounds),
 
-              // ── FAB de re-centralizar (acima da faixa de dados) ──────────
-              if (_currentLocation != null && !_isFollowing)
-                Positioned(
-                  bottom: 80,
-                  right: 16,
-                  child: FloatingActionButton(
-                    onPressed: () {
-                      setState(() => _isFollowing = true);
-                      _updateMapCamera();
-                    },
-                    backgroundColor: AppColors.accent,
-                    child: const Icon(Icons.my_location, color: Colors.white),
-                  ),
-                ),
-
-              // ── Faixa de dados inferior ──────────────────────────────────
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                child: _buildBottomDataStrip(),
-              ),
-            ],
+          // ── Barra superior ───────────────────────────────────────────
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: _buildTopBar(),
           ),
-        );
-      },
+
+          // ── FAB de re-centralizar (acima da faixa de dados) ──────────
+          if (_currentLocation != null && !_isFollowing)
+            Positioned(
+              bottom: 80,
+              right: 16,
+              child: FloatingActionButton(
+                onPressed: () {
+                  setState(() => _isFollowing = true);
+                  _updateMapCamera();
+                },
+                backgroundColor: AppColors.accent,
+                child: const Icon(Icons.my_location, color: Colors.white),
+              ),
+            ),
+
+          // ── Faixa de dados inferior ──────────────────────────────────
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: _buildBottomDataStrip(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -231,7 +231,7 @@ class _NavigationMapScreenState extends State<NavigationMapScreen> {
   // Mapa
   // ---------------------------------------------------------------------------
 
-  Widget _buildMap(ChartSettingsProvider settings, LatLngBounds? initialBounds) {
+  Widget _buildMap(ChartSettings settings, LatLngBounds? initialBounds) {
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(

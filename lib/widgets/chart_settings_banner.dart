@@ -1,26 +1,18 @@
-// ignore_for_file: dangling_library_doc_comments
-// Contém código gerado por IA
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/theme/app_colors.dart';
 
-/// ChartSettingsBanner
-/// Widget que exibe as configurações de opacidade e opção de remover a visualização da IAC.
-/// 
-/// Classes/Métodos presentes:
-/// - ChartSettingsBanner: Widget simplificado para ajustes da IAC.
-class ChartSettingsBanner extends StatelessWidget {
+class ChartSettingsBanner extends ConsumerWidget {
   final String chartType;
 
-  const ChartSettingsBanner({
-    super.key,
-    required this.chartType,
-  });
+  const ChartSettingsBanner({super.key, required this.chartType});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(chartSettingsProvider);
+    final notifier = ref.read(chartSettingsProvider.notifier);
+
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -42,11 +34,8 @@ class ChartSettingsBanner extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Opção de Remover (Ocultar tudo)
             InkWell(
-              onTap: () {
-                Provider.of<ChartSettingsProvider>(context, listen: false).toggleIacVisibility(false);
-              },
+              onTap: () => notifier.setIacVisible(false),
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 4),
                 child: Row(
@@ -66,15 +55,12 @@ class ChartSettingsBanner extends StatelessWidget {
               ),
             ),
             const Divider(),
-            
             const Text('Opacidade da IAC', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-            Consumer<ChartSettingsProvider>(
-              builder: (context, provider, _) => Slider(
-                value: provider.iacOpacity,
-                onChanged: provider.setIacOpacity,
-                activeColor: AppColors.secondary,
-                inactiveColor: AppColors.secondary.withAlpha(40),
-              ),
+            Slider(
+              value: settings.iacOpacity,
+              onChanged: notifier.setIacOpacity,
+              activeColor: AppColors.secondary,
+              inactiveColor: AppColors.secondary.withAlpha(40),
             ),
           ],
         ),
