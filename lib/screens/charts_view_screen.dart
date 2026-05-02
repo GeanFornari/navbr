@@ -2,7 +2,6 @@
 // Contém código gerado por IA
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:navbr/theme/app_colors.dart';
 import 'package:navbr/theme/app_theme.dart';
@@ -19,6 +18,7 @@ import 'package:navbr/theme/app_theme.dart';
 /// Métodos presentes:
 /// - build: Constrói a interface da tela.
 /// - _buildTopBar: Constrói a barra superior escura.
+
 class ChartsViewScreen extends ConsumerWidget {
   const ChartsViewScreen({super.key});
 
@@ -27,43 +27,34 @@ class ChartsViewScreen extends ConsumerWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final sidebarWidth = screenWidth * 0.1;
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
-      child: Scaffold(
-        backgroundColor: context.theme.customBackground,
-        extendBodyBehindAppBar: true,
-        body: Row(
-          children: [
-            // Menu Lateral Esquerdo (Sidebar)
-            Container(
-              width: sidebarWidth,
-              color: AppColors.cockpitBackground,
-              child: const Column(
-                children: [
-                  // Conteúdo futuro do menu lateral
-                ],
-              ),
+    return Scaffold(
+      backgroundColor: context.theme.customBackground,
+      body: Row(
+        children: [
+          // Menu Lateral Esquerdo (Sidebar)
+          Container(
+            width: sidebarWidth,
+            color: AppColors.cockpitBackground,
+            child: const Column(
+              children: [
+                // Conteúdo futuro do menu lateral
+              ],
             ),
-            // Divisor Vertical
-            Container(
-              width: 1,
-              color: AppColors.cockpitDivider,
-            ),
-            // Área de Conteúdo Principal
-            Expanded(
-              child: Column(
-                children: [
-                  _buildTopBar(),
-                  const Expanded(
-                    child: Center(
-                      child: SizedBox(), // Vazio por enquanto conforme solicitado
-                    ),
+          ),
+          // Área de Conteúdo Principal
+          Expanded(
+            child: Column(
+              children: [
+                _buildTopBar(),
+                const Expanded(
+                  child: Center(
+                    child: SizedBox(), // Vazio por enquanto conforme solicitado
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -71,23 +62,20 @@ class ChartsViewScreen extends ConsumerWidget {
   Widget _buildTopBar() {
     return Container(
       color: AppColors.cockpitBackground,
-      child: SafeArea(
-        bottom: false,
-        child: SizedBox(
-          height: 48,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                // Placeholder para o seletor de cartas se necessário futuramente
-                const SizedBox(width: 8),
-                const _TopBarIcon(icon: Icons.layers_outlined, label: 'Cartas'),
-                const SizedBox(width: 8),
-                const _TopBarIcon(icon: Icons.tune),
-                const Spacer(),
-                const _SearchBar(),
-              ],
-            ),
+      child: const SizedBox(
+        height: 48,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: [
+              // Placeholder para o seletor de cartas se necessário futuramente
+              SizedBox(width: 8),
+              _TopBarIcon(icon: Icons.layers_outlined, label: 'Cartas'),
+              const SizedBox(width: 8),
+              _TopBarIcon(icon: Icons.tune),
+              Spacer(),
+              _SearchBar(),
+            ],
           ),
         ),
       ),
