@@ -25,6 +25,8 @@ const _tipoLabels = {
   'enrc': 'ENRC',
   'enrcl': 'ENRC L',
   'enrch': 'ENRC H',
+  'enrc_l': 'ENRC L',
+  'enrc_h': 'ENRC H',
 };
 
 const _tipoDescriptions = {
@@ -46,6 +48,8 @@ const _tipoDescriptions = {
   'enrc': 'En-Route Chart (Baixa Altitude)',
   'enrcl': 'En-Route Chart (Baixa Altitude)',
   'enrch': 'En-Route Chart (Alta Altitude)',
+  'enrc_l': 'En-Route Chart (Baixa Altitude)',
+  'enrc_h': 'En-Route Chart (Alta Altitude)',
 };
 
 const _tipoToCategory = {
@@ -66,6 +70,8 @@ const _tipoToCategory = {
   'enrc': 'Cartas IFR',
   'enrcl': 'Cartas IFR',
   'enrch': 'Cartas IFR',
+  'enrc_l': 'Cartas IFR',
+  'enrc_h': 'Cartas IFR',
   'reast': 'Cartas IFR',
 };
 
@@ -227,9 +233,9 @@ class ChartsDownloadScreen extends ConsumerWidget {
       final cat = _tipoToCategory[group.tipo] ?? group.tipo.toUpperCase();
       if (cat == 'Cartas de Aeródromos') {
         adGroups.add(group);
-      } else if (group.tipo == 'enrch') {
+      } else if (group.tipo == 'enrch' || group.tipo == 'enrc_h' || group.key.contains('enrch') || group.key.contains('enrc_h')) {
         enrchGroups.add(group);
-      } else if (group.tipo == 'enrcl' || group.tipo == 'enrc') {
+      } else if (group.tipo == 'enrcl' || group.tipo == 'enrc_l' || group.tipo == 'enrc' || group.key.contains('enrcl') || group.key.contains('enrc_l')) {
         enrclGroups.add(group);
       } else {
         otherGroups.add(group);
