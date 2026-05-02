@@ -4,6 +4,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pdfx/pdfx.dart';
@@ -198,40 +199,43 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
       );
     }
 
-    return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        children: [
-          // ── Mapa (tela cheia) ────────────────────────────────────────
-          _buildMap(settings, initialBounds),
-
-          // ── Barra superior ───────────────────────────────────────────
-          Positioned(top: 0, left: 0, right: 0, child: _buildTopBar()),
-
-          // ── FAB de re-centralizar (acima da faixa de dados) ──────────
-          if (_currentLocation != null && !_isFollowing)
-            Positioned(
-              bottom: 80,
-              right: 16,
-              child: FloatingActionButton(
-                onPressed: () {
-                  setState(() => _isFollowing = true);
-                  _updateMapCamera();
-                },
-                backgroundColor: AppColors.accent,
-                child: const Icon(Icons.my_location, color: Colors.white),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        extendBody: true,
+        extendBodyBehindAppBar: true,
+        body: Stack(
+          children: [
+            // ── Mapa (tela cheia) ────────────────────────────────────────
+            _buildMap(settings, initialBounds),
+  
+            // ── Barra superior ───────────────────────────────────────────
+            Positioned(top: 0, left: 0, right: 0, child: _buildTopBar()),
+  
+            // ── FAB de re-centralizar (acima da faixa de dados) ──────────
+            if (_currentLocation != null && !_isFollowing)
+              Positioned(
+                bottom: 80,
+                right: 16,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    setState(() => _isFollowing = true);
+                    _updateMapCamera();
+                  },
+                  backgroundColor: AppColors.accent,
+                  child: const Icon(Icons.my_location, color: Colors.white),
+                ),
               ),
+  
+            // ── Faixa de dados inferior ──────────────────────────────────
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _buildBottomDataStrip(),
             ),
-
-          // ── Faixa de dados inferior ──────────────────────────────────
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _buildBottomDataStrip(),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
