@@ -49,15 +49,15 @@ const _tipoDescriptions = {
 };
 
 const _tipoToCategory = {
-  'iac': 'Cartas de ADs',
-  'sid': 'Cartas de ADs',
-  'star': 'Cartas de ADs',
-  'adc': 'Cartas de ADs',
-  'gmc': 'Cartas de ADs',
-  'pdc': 'Cartas de ADs',
-  'vac': 'Cartas de ADs',
-  'cv': 'Cartas de ADs',
-  'lc': 'Cartas de ADs',
+  'iac': 'Cartas de Aeródromos',
+  'sid': 'Cartas de Aeródromos',
+  'star': 'Cartas de Aeródromos',
+  'adc': 'Cartas de Aeródromos',
+  'gmc': 'Cartas de Aeródromos',
+  'pdc': 'Cartas de Aeródromos',
+  'vac': 'Cartas de Aeródromos',
+  'cv': 'Cartas de Aeródromos',
+  'lc': 'Cartas de Aeródromos',
   'arc': 'ARC',
   'rea': 'REA',
   'reh': 'REH',
@@ -70,7 +70,7 @@ const _tipoToCategory = {
 };
 
 const _categoryOrder = [
-  'Cartas de ADs',
+  'Cartas de Aeródromos',
   'ARC',
   'REA',
   'REH',
@@ -231,7 +231,7 @@ class ChartsDownloadScreen extends ConsumerWidget {
 
     for (final group in state.manifest!.groups) {
       final cat = _tipoToCategory[group.tipo] ?? group.tipo.toUpperCase();
-      if (cat == 'Cartas de ADs') {
+      if (cat == 'Cartas de Aeródromos') {
         adGroups.add(group);
       } else if (group.tipo == 'enrch') {
         enrchGroups.add(group);
@@ -243,7 +243,7 @@ class ChartsDownloadScreen extends ConsumerWidget {
     }
 
     if (adGroups.isNotEmpty) {
-      byCategory['Cartas de ADs'] = [
+      byCategory['Cartas de Aeródromos'] = [
         _UIGroup(
           key: 'cartas_de_ads',
           title: 'Cartas de Aeródromos',
@@ -369,31 +369,60 @@ class ChartsDownloadScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${uiGroup.title}  —  ${uiGroup.subtitle}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: AppColors.textPrimary,
+                child: (() {
+                  int currentCount = localCount;
+                  if (isDownloading && progress != null) {
+                    currentCount = progress.$1;
+                  }
+                  final double sliderValue = total > 0 ? (currentCount / total).clamp(0.0, 1.0) : 0.0;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${uiGroup.title}  —  ${uiGroup.subtitle}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      isDownloading && progress != null
-                          ? '${progress.$1} / ${progress.$2} arquivos'
-                          : isPartial
-                          ? '$localCount/$total cartas  ·  ${_formatSize(uiGroup.totalSize)}'
-                          : '$total cartas  ·  ${_formatSize(uiGroup.totalSize)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: sliderValue,
+                          minHeight: 6,
+                          backgroundColor: AppColors.disabled.withAlpha(50),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isComplete ? AppColors.success : AppColors.accent,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatSize(uiGroup.totalSize),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            '$currentCount/$total',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                })(),
               ),
               const SizedBox(width: 8),
               if (isDownloading)
