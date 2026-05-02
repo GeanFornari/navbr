@@ -1,17 +1,21 @@
 # navbr
 
-A new Flutter project.
+Aeronautical Moving Map navigation application for Brazilian airspace.
 
-## Getting Started
+## Overview
 
-This project is a starting point for a Flutter application.
+**navbr** is a standalone, real-time aeronautical navigation application built with Flutter. It utilizes charts from DECEA (Brazil's Department of Airspace Control) to provide a dynamic Moving Map experience, overlaying aircraft position (GPS) securely onto geo-referenced aviation charts (WAC, IAC, etc.).
 
-A few resources to get you started if this is your first Flutter project:
+## Features
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- **Real-time Navigation (Moving Map):** Live GPS plotting directly over georeferenced charts.
+- **WAC Support:** Reads and displays World Aeronautical Charts via embedded GeoTIFF metadata.
+- **IAC Support:** Reads and extracts OGC coordinate data from Instrument Approach Charts (GeoPDF).
+- **Offline First Approach:** Downloads and locally caches charts for seamless offline use.
+- **Flight Orientation:** Supports North Up and Track Up rendering.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Setup
+
+1. Copy `.env.example` to `.env` and fill in the necessary API keys.
+2. Run `flutter pub get`
+3. Run the application with `flutter run`

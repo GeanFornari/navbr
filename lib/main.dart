@@ -7,9 +7,11 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:navbr/firebase_options.dart';
 import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/router/app_router.dart';
+import 'package:navbr/services/database_service.dart';
 import 'package:navbr/services/download_service.dart';
 import 'package:navbr/services/geotiff_parser.dart';
 import 'package:navbr/services/geopdf_parser.dart';
@@ -22,6 +24,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  
+  await Hive.initFlutter();
+  Hive.registerAdapter(ChartIndexAdapter());
+  
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   PlatformDispatcher.instance.onError = (error, stack) {

@@ -46,7 +46,7 @@ flutter pub upgrade --major-versions
 
 ## Project Purpose
 
-This is **navbr** — a Flutter sandbox PoC (Prova de Conceito) for aeronautical Moving Map navigation using charts from DECEA (Brazil's Department of Airspace Control). The goal is to prove the Lat/Lon → XY math and rendering pipeline before migrating validated code to the main AISBR app. Architecture is intentionally simple: no Hive, no Riverpod, no complex state management — only what's needed to make the rendering work.
+This is **navbr** — a full-fledged standalone Flutter application for aeronautical Moving Map navigation using charts from DECEA (Brazil's Department of Airspace Control). The architecture is continuously evolving, utilizing modern Flutter state management (Riverpod) and focusing on high-performance georeferenced rendering (Lat/Lon → XY).
 
 ## Architecture
 
@@ -100,7 +100,7 @@ A single `ChangeNotifier` (Provider) backed by `SharedPreferences` holds all cha
 ### Dependency Policy
 Always use latest package versions. Resolve version conflicts with `dependency_overrides` rather than downgrading.
 
-## Known PoC Limitations (for migration to AISBR)
+## Technical Debt & Future Improvements
 - WAC GeoTIFF is loaded fully into RAM for binary parsing. In production, a server/CLI should pre-extract the bounding box to a sidecar JSON.
 - IAC `LPTS` offsets are read but not yet applied to crop the overlay — the chart currently aligns from the full A4 page bounds.
 - Large GeoTIFFs on low-memory devices will OOM. The fix is tile-based rendering (MBTiles/XYZ via `gdal2tiles`).

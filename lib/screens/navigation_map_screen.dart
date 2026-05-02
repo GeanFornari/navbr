@@ -22,7 +22,8 @@ class NavigationMapScreen extends ConsumerStatefulWidget {
   const NavigationMapScreen({super.key});
 
   @override
-  ConsumerState<NavigationMapScreen> createState() => _NavigationMapScreenState();
+  ConsumerState<NavigationMapScreen> createState() =>
+      _NavigationMapScreenState();
 }
 
 class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
@@ -183,24 +184,30 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
     }
 
     LatLngBounds? initialBounds;
-    if (settings.wacPath != null && settings.wacBoundingBox != null) {
+    if (settings.baseCharts.isNotEmpty) {
+      final firstChart = settings.baseCharts.first;
       initialBounds = LatLngBounds(
-        LatLng(settings.wacBoundingBox!['south']!, settings.wacBoundingBox!['west']!),
-        LatLng(settings.wacBoundingBox!['north']!, settings.wacBoundingBox!['east']!),
+        LatLng(
+          firstChart.boundingBox['south']!,
+          firstChart.boundingBox['west']!,
+        ),
+        LatLng(
+          firstChart.boundingBox['north']!,
+          firstChart.boundingBox['east']!,
+        ),
       );
     }
 
     return Scaffold(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           // ── Mapa (tela cheia) ────────────────────────────────────────
           _buildMap(settings, initialBounds),
 
           // ── Barra superior ───────────────────────────────────────────
-          Positioned(
-            top: 0, left: 0, right: 0,
-            child: _buildTopBar(),
-          ),
+          Positioned(top: 0, left: 0, right: 0, child: _buildTopBar()),
 
           // ── FAB de re-centralizar (acima da faixa de dados) ──────────
           if (_currentLocation != null && !_isFollowing)
@@ -219,7 +226,9 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
 
           // ── Faixa de dados inferior ──────────────────────────────────
           Positioned(
-            bottom: 0, left: 0, right: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: _buildBottomDataStrip(),
           ),
         ],
@@ -236,7 +245,10 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
       mapController: _mapController,
       options: MapOptions(
         initialCameraFit: initialBounds != null
-            ? CameraFit.bounds(bounds: initialBounds, padding: const EdgeInsets.all(50))
+            ? CameraFit.bounds(
+                bounds: initialBounds,
+                padding: const EdgeInsets.all(50),
+              )
             : null,
         onMapReady: () {
           setState(() => _isMapReady = true);
@@ -253,27 +265,42 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
           userAgentPackageName: 'com.example.navbr',
         ),
 
-        if (settings.wacPath != null && settings.wacBoundingBox != null)
+        if (settings.baseCharts.isNotEmpty)
           OverlayImageLayer(
-            overlayImages: [
-              OverlayImage(
+            overlayImages: settings.baseCharts.map((chart) {
+              return OverlayImage(
                 bounds: LatLngBounds(
-                  LatLng(settings.wacBoundingBox!['south']!, settings.wacBoundingBox!['west']!),
-                  LatLng(settings.wacBoundingBox!['north']!, settings.wacBoundingBox!['east']!),
+                  LatLng(
+                    chart.boundingBox['south']!,
+                    chart.boundingBox['west']!,
+                  ),
+                  LatLng(
+                    chart.boundingBox['north']!,
+                    chart.boundingBox['east']!,
+                  ),
                 ),
-                imageProvider: FileImage(File(settings.wacPath!)),
-                opacity: settings.wacOpacity,
-              ),
-            ],
+                imageProvider: FileImage(File(chart.path)),
+                opacity: settings
+                    .wacOpacity, // TODO: Renomear para baseChartOpacity depois
+              );
+            }).toList(),
           ),
 
-        if (settings.isIacVisible && _renderedIacPath != null && settings.iacBoundingBox != null)
+        if (settings.isIacVisible &&
+            _renderedIacPath != null &&
+            settings.iacBoundingBox != null)
           OverlayImageLayer(
             overlayImages: [
               OverlayImage(
                 bounds: LatLngBounds(
-                  LatLng(settings.iacBoundingBox!['south']!, settings.iacBoundingBox!['west']!),
-                  LatLng(settings.iacBoundingBox!['north']!, settings.iacBoundingBox!['east']!),
+                  LatLng(
+                    settings.iacBoundingBox!['south']!,
+                    settings.iacBoundingBox!['west']!,
+                  ),
+                  LatLng(
+                    settings.iacBoundingBox!['north']!,
+                    settings.iacBoundingBox!['east']!,
+                  ),
                 ),
                 imageProvider: FileImage(File(_renderedIacPath!)),
                 opacity: settings.iacOpacity,
@@ -319,7 +346,11 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
                     ),
                     child: IconButton(
                       padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.settings, color: AppColors.primary, size: 18),
+                      icon: const Icon(
+                        Icons.settings,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
                       onPressed: _toggleSettingsOverlay,
                     ),
                   ),
@@ -403,29 +434,83 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
 // Widgets auxiliares da tela de navegação
 // =============================================================================
 
-class _ChartSelectorButton extends StatelessWidget {
+class _ChartSelectorButton extends ConsumerWidget {
   const _ChartSelectorButton();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.cockpitSurface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.layers_outlined, color: Colors.white, size: 15),
-          SizedBox(width: 6),
-          Text(
-            'WAC + IAC',
-            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-          SizedBox(width: 4),
-          Icon(Icons.keyboard_arrow_down, color: Colors.white60, size: 16),
-        ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(chartSettingsProvider);
+    final notifier = ref.read(chartSettingsProvider.notifier);
+
+    final options = ['ENRC L', 'ENRC H', 'WAC', 'Nenhum'];
+
+    return PopupMenuButton<String>(
+      initialValue: settings.selectedBaseChart,
+      onSelected: (value) {
+        notifier.setSelectedBaseChart(value);
+      },
+      itemBuilder: (BuildContext context) {
+        return options.map((String choice) {
+          return PopupMenuItem<String>(
+            value: choice,
+            child: Row(
+              children: [
+                Icon(
+                  choice == settings.selectedBaseChart
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  color: choice == settings.selectedBaseChart
+                      ? AppColors.accent
+                      : AppColors.textSecondary,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(choice, style: const TextStyle(fontSize: 14)),
+              ],
+            ),
+          );
+        }).toList();
+      },
+      offset: const Offset(0, 40),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: AppColors.surface,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.cockpitSurface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (settings.isLoadingBaseCharts)
+              const SizedBox(
+                width: 15,
+                height: 15,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            else
+              const Icon(Icons.layers_outlined, color: Colors.white, size: 15),
+            const SizedBox(width: 6),
+            Text(
+              settings.selectedBaseChart,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              color: Colors.white60,
+              size: 16,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -450,7 +535,14 @@ class _TopBarIcon extends StatelessWidget {
                 children: [
                   Icon(icon, color: Colors.white, size: 18),
                   const SizedBox(height: 1),
-                  Text(label!, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w500)),
+                  Text(
+                    label!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               )
             : Icon(icon, color: Colors.white, size: 20),
@@ -513,7 +605,11 @@ class _DataColumn extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             value,
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
           ),
         ],

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://aisweb.decea.mil.br/api/?apiKey=1165216031&apiPass=e11bcfed-b7db-11eb-9a71-0050569ac1e0&area=checklist\")",
+      "Bash(curl -s \"https://aisweb.decea.mil.br/api/?apiKey=1165216031&apiPass=e11bcfed-b7db-11eb-9a71-0050569ac1e0&area=cartas&icaocode=SBSP\")",
+      "Bash(curl -s \"https://aisweb.decea.mil.br/api/?apiKey=1165216031&apiPass=e11bcfed-b7db-11eb-9a71-0050569ac1e0&area=cartas&especie=VFR\")",
+      "Bash(curl -s \"https://aisweb.decea.mil.br/api/?apiKey=1165216031&apiPass=e11bcfed-b7db-11eb-9a71-0050569ac1e0&area=cartas&especie=ROTA\")",
+      "Bash(curl -s \"https://aisweb.decea.mil.br/api/?apiKey=1165216031&apiPass=e11bcfed-b7db-11eb-9a71-0050569ac1e0&area=cartas\")",
+      "Bash(dart pub *)",
+      "Bash(flutterfire --version)",
+      "Bash(firebase login:list)"
+    ]
+  }
+}
