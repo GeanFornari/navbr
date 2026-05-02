@@ -8,7 +8,18 @@
       "Bash(curl -s \"https://aisweb.decea.mil.br/api/?apiKey=1165216031&apiPass=e11bcfed-b7db-11eb-9a71-0050569ac1e0&area=cartas\")",
       "Bash(dart pub *)",
       "Bash(flutterfire --version)",
-      "Bash(firebase login:list)"
+      "Bash(firebase login:list)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type} %{size_download}\" \"https://geoaisweb.decea.mil.br/src/geotiffs/sbxx_enrc-h1_enrc_20260416.tif\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type} %{size_download}\" \"https://geoaisweb.decea.mil.br/src/geotiffs/ENRC_H1.tif\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{size_download}\" \"https://geoaisweb.decea.mil.br/src/geotiffs/ARC.tif\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{size_download}\" \"https://geoaisweb.decea.mil.br/src/geotiffs/ENRC_L1.tif\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{size_download}\" \"https://geoaisweb.decea.mil.br/src/geotiffs/ENRC_H5.tif\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://geoaisweb.decea.mil.br/src/geotiffs/\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://geoaisweb.decea.mil.br/\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://geoaisweb.decea.mil.br/src/\")",
+      "Bash(curl -s \"https://geoaisweb.decea.mil.br/\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\" \"https://geoaisweb.decea.mil.br/geoserver/ICA/wms?service=WMS&version=1.1.0&request=GetMap&layers=ICA%3AARC_ACADEMIA&bbox=-50.13974547775592%2C-23.099310995522153%2C-46.05152847023707%2C-20.52300403721618&width=768&height=483&srs=EPSG%3A4326&styles=&format=image/png\")",
+      "Bash(curl -s \"https://geoaisweb.decea.mil.br/geoserver/ICA/wms?service=WMS&version=1.1.0&request=GetCapabilities\")"
     ]
   }
 }
