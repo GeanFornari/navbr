@@ -7,6 +7,55 @@ class MainShell extends StatelessWidget {
 
   const MainShell({required this.navigationShell, super.key});
 
+  void _showSideSheet(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Fechar',
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerRight,
+          child: Material(
+            color: AppColors.background,
+            child: Container(
+              width: 300,
+              height: double.infinity,
+              padding: const EdgeInsets.only(top: 50, left: 16, right: 16),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Opções',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  // Em breve aqui virão as opções e configurações
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1.0, 0.0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          )),
+          child: child,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,11 +71,17 @@ class MainShell extends StatelessWidget {
           ],
         ),
         child: BottomNavigationBar(
-          currentIndex: navigationShell.currentIndex,
-          onTap: (index) => navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          ),
+          currentIndex: navigationShell.currentIndex == 4 ? 1 : navigationShell.currentIndex,
+          onTap: (index) {
+            if (index == 4) {
+              _showSideSheet(context);
+            } else {
+              navigationShell.goBranch(
+                index,
+                initialLocation: index == navigationShell.currentIndex,
+              );
+            }
+          },
           type: BottomNavigationBarType.fixed,
           backgroundColor: AppColors.black,
           selectedItemColor: AppColors.white,
