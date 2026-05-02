@@ -24,17 +24,42 @@ class ChartsViewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final sidebarWidth = screenWidth * 0.1;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: context.theme.customBackground,
         extendBodyBehindAppBar: true,
-        body: Column(
+        body: Row(
           children: [
-            _buildTopBar(),
-            const Expanded(
-              child: Center(
-                child: SizedBox(), // Vazio por enquanto conforme solicitado
+            // Menu Lateral Esquerdo (Sidebar)
+            Container(
+              width: sidebarWidth,
+              color: AppColors.cockpitBackground,
+              child: const Column(
+                children: [
+                  // Conteúdo futuro do menu lateral
+                ],
+              ),
+            ),
+            // Divisor Vertical
+            Container(
+              width: 1,
+              color: AppColors.cockpitDivider,
+            ),
+            // Área de Conteúdo Principal
+            Expanded(
+              child: Column(
+                children: [
+                  _buildTopBar(),
+                  const Expanded(
+                    child: Center(
+                      child: SizedBox(), // Vazio por enquanto conforme solicitado
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
