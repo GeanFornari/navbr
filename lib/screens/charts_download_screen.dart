@@ -59,10 +59,10 @@ const _tipoToCategory = {
   'cv': 'Cartas de Aeródromos',
   'lc': 'Cartas de Aeródromos',
   'arc': 'ARC',
-  'rea': 'REA',
-  'reh': 'REH',
-  'reul': 'REUL',
-  'wac': 'WAC',
+  'rea': 'Cartas VFR',
+  'reh': 'Cartas VFR',
+  'reul': 'Cartas VFR',
+  'wac': 'Cartas VFR',
   'enrc': 'ENRC L',
   'enrcl': 'ENRC L',
   'enrch': 'ENRC H',
@@ -71,11 +71,8 @@ const _tipoToCategory = {
 
 const _categoryOrder = [
   'Cartas de Aeródromos',
+  'Cartas VFR',
   'ARC',
-  'REA',
-  'REH',
-  'REUL',
-  'WAC',
   'ENRC L',
   'ENRC H',
   'REAST',
@@ -284,6 +281,17 @@ class ChartsDownloadScreen extends ConsumerWidget {
         originalGroups: [group],
       );
       byCategory.putIfAbsent(cat, () => []).add(uig);
+    }
+
+    if (byCategory['Cartas VFR'] != null) {
+      final vfrOrder = ['wac', 'rea', 'reh', 'reul'];
+      byCategory['Cartas VFR']!.sort((a, b) {
+        final aType = a.originalGroups.first.tipo;
+        final bType = b.originalGroups.first.tipo;
+        final aIndex = vfrOrder.indexOf(aType);
+        final bIndex = vfrOrder.indexOf(bType);
+        return (aIndex == -1 ? 99 : aIndex).compareTo(bIndex == -1 ? 99 : bIndex);
+      });
     }
 
     return ListView(
