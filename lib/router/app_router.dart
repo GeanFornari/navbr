@@ -1,6 +1,7 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:navbr/screens/charts_view_screen.dart';
 import 'package:navbr/screens/charts_download_screen.dart';
 import 'package:navbr/screens/main_shell.dart';
 import 'package:navbr/screens/navigation_map_screen.dart';
@@ -31,7 +32,7 @@ final appRouter = GoRouter(
         StatefulShellBranch(routes: [
           GoRoute(
             path: '/charts',
-            builder: (context, state) => const ChartsDownloadScreen(),
+            builder: (context, state) => const ChartsViewScreen(),
           ),
         ]),
         StatefulShellBranch(routes: [
