@@ -1,3 +1,24 @@
+class BoundingBox {
+  const BoundingBox({
+    required this.north,
+    required this.south,
+    required this.east,
+    required this.west,
+  });
+
+  final double north;
+  final double south;
+  final double east;
+  final double west;
+
+  factory BoundingBox.fromJson(Map<String, dynamic> json) => BoundingBox(
+        north: (json['north'] as num).toDouble(),
+        south: (json['south'] as num).toDouble(),
+        east: (json['east'] as num).toDouble(),
+        west: (json['west'] as num).toDouble(),
+      );
+}
+
 class R2Latest {
   const R2Latest({required this.emenda, required this.folder});
   final String emenda;
@@ -14,20 +35,26 @@ class R2ManifestFile {
     required this.path,
     required this.size,
     required this.sha256,
+    this.bbox,
   });
   final String path;
   final int size;
   final String sha256;
+  final BoundingBox? bbox;
 
   String get especie => path.split('/').first;
   String get tipo => path.split('/')[1];
   String get filename => path.split('/').last;
 
-  factory R2ManifestFile.fromJson(Map<String, dynamic> json) => R2ManifestFile(
-        path: json['path'] as String,
-        size: json['size'] as int,
-        sha256: json['sha256'] as String,
-      );
+  factory R2ManifestFile.fromJson(Map<String, dynamic> json) {
+    final bboxJson = json['bbox'] as Map<String, dynamic>?;
+    return R2ManifestFile(
+      path: json['path'] as String,
+      size: json['size'] as int,
+      sha256: json['sha256'] as String,
+      bbox: bboxJson != null ? BoundingBox.fromJson(bboxJson) : null,
+    );
+  }
 }
 
 class R2ChartGroup {
