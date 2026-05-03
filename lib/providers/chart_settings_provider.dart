@@ -167,18 +167,29 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
 
     try {
       final String tipoQuery;
+      final RegExp? enrcFilter;
       if (type == 'WAC') {
         tipoQuery = 'wac';
+        enrcFilter = null;
       } else if (type == 'ENRC L') {
-        tipoQuery = 'enrcl';
+        tipoQuery = 'enrc';
+        enrcFilter = RegExp(r'ENRC_L\d', caseSensitive: false);
       } else if (type == 'ENRC H') {
-        tipoQuery = 'enrch';
+        tipoQuery = 'enrc';
+        enrcFilter = RegExp(r'ENRC_H\d', caseSensitive: false);
       } else {
         state = state.copyWith(baseCharts: [], isLoadingBaseCharts: false);
         return;
       }
 
-      final chartsFromDb = await _db.getChartsByType(tipoQuery);
+      final allChartsFromDb = await _db.getChartsByType(tipoQuery);
+      final chartsFromDb = enrcFilter == null
+          ? allChartsFromDb
+          : allChartsFromDb
+              .where(
+                (c) => enrcFilter!.hasMatch(c.path.split('/').last),
+              )
+              .toList();
       final List<BaseChart> loadedCharts = [];
 
       for (final c in chartsFromDb) {
@@ -207,7 +218,11 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
           for (final espDir in espDirs) {
             final tipoDir = Directory('${espDir.path}/$tipoQuery');
             if (await tipoDir.exists()) {
-              final files = tipoDir.listSync().whereType<File>();
+              final files = tipoDir.listSync().whereType<File>().where(
+                (f) =>
+                    enrcFilter == null ||
+                    enrcFilter.hasMatch(f.path.split('/').last),
+              );
               for (final file in files) {
                 if (!loadedCharts.any((c) => c.path == file.path)) {
                   final ext = file.path.split('.').last.toLowerCase();
