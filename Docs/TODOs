@@ -7,3 +7,20 @@ Domínio próprio no Cloudflare para produção.
 No dropdown de tipo de carta, só mostrar as cartas disponíveis (baixadas).
 
 Criar o CLAUDE Ignore.
+
+O que precisamos fazer? (Recomendação)
+Embora não precise sair correndo hoje (as versões atuais continuam funcionando), é altamente recomendável planejar essa migração nos próximos meses para evitar dores de cabeça no final do ano.
+
+Os passos para os projetos (navbr, ais-br, journeycomply, etc) serão:
+
+Habilitar o SPM no Flutter:
+bash
+flutter config --enable-swift-package-manager
+Atualizar os plugins do Firebase no pubspec.yaml para as versões que suportam SPM nativamente.
+Limpar o CocoaPods: Remover o Podfile, Podfile.lock e a pasta Pods (o Flutter cuidará de migrar o projeto Xcode para usar SPM automaticamente ao rodar o comando de build).
+⚠️ Ponto de Atenção
+Antes de migrar de vez, precisamos garantir que todos os seus outros plugins (como geolocator, path_provider, etc.) também suportem SPM. Se algum plugin crucial ainda depender exclusivamente de CocoaPods, teremos que manter o CocoaPods por mais um tempo (e o Firebase permite um modo "híbrido" ou manual, mas é mais chatinho).
+
+Resumo da ópera: Precisa tomar medida? Sim, mas não é um incêndio. 🔥 Recomendaria agendarmos essa migração para o próximo "sprint" de manutenção do projeto, assim garantimos que o navbr continue moderno e seguro.
+
+Qualquer dúvida, é só dar o grito! 🚀 🚁

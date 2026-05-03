@@ -19,7 +19,17 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://geoaisweb.decea.mil.br/src/\")",
       "Bash(curl -s \"https://geoaisweb.decea.mil.br/\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\" \"https://geoaisweb.decea.mil.br/geoserver/ICA/wms?service=WMS&version=1.1.0&request=GetMap&layers=ICA%3AARC_ACADEMIA&bbox=-50.13974547775592%2C-23.099310995522153%2C-46.05152847023707%2C-20.52300403721618&width=768&height=483&srs=EPSG%3A4326&styles=&format=image/png\")",
-      "Bash(curl -s \"https://geoaisweb.decea.mil.br/geoserver/ICA/wms?service=WMS&version=1.1.0&request=GetCapabilities\")"
+      "Bash(curl -s \"https://geoaisweb.decea.mil.br/geoserver/ICA/wms?service=WMS&version=1.1.0&request=GetCapabilities\")",
+      "Bash(mkdir -p /Users/gean/Projetos/navbr/docs/superpowers/specs)",
+      "Bash(mkdir -p /Users/gean/Projetos/charts_loader_cli/docs/superpowers/specs)",
+      "Bash(git -C /Users/gean/Projetos/charts_loader_cli show 5a4f2be -- lib/src/models/bounding_box.dart lib/src/models/chart.dart)",
+      "Bash(xargs cat *)",
+      "Bash(dart format *)",
+      "Bash(git -C /Users/gean/Projetos/charts_loader_cli show 2d7f338:lib/src/models/chart.dart)",
+      "Bash(dart --version)",
+      "Bash(dart -e \"enum T { ccvRea } void main\\(\\) { print\\(T.ccvRea.name.toUpperCase\\(\\)\\); }\")",
+      "Bash(cat)",
+      "Bash(dart /tmp/check_enum.dart)"
     ]
   }
 }
