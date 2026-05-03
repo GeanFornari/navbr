@@ -17,10 +17,11 @@ const _tipoLabels = {
   'star': 'STAR',
   'vac': 'VAC',
   'cv': 'CV',
+  'ccvRea': 'CCV REA',
+  'ccvReh': 'CCV REH',
   'rea': 'REA',
   'reast': 'REAST',
   'reh': 'REH',
-  'reul': 'REUL',
   'wac': 'WAC',
   'enrc': 'ENRC',
   'enrcl': 'ENRC L',
@@ -40,12 +41,13 @@ const _tipoDescriptions = {
   'star': 'Standard Terminal Arrival',
   'vac': 'Visual Approach Chart',
   'cv': 'Carta Visual',
-  'rea': 'Rota Especial',
-  'reast': 'Rota Especial (Aterrissagem)',
-  'reh': 'Rota Especial (Helicóptero)',
-  'reul': 'Rota Especial (Ultralight)',
+  'ccvRea': 'Cobertura VFR — Rota Especial (Área)',
+  'ccvReh': 'Cobertura VFR — Rota Especial (Helicóptero)',
+  'rea': 'REA — Rota Especial (Área)',
+  'reast': 'REAST — Rota Especial (Aterrissagem)',
+  'reh': 'REH — Rota Especial (Helicóptero)',
   'wac': 'World Aeronautical Chart',
-  'enrc': 'En-Route Chart (Baixa Altitude)',
+  'enrc': 'En-Route Chart',
   'enrcl': 'En-Route Chart (Baixa Altitude)',
   'enrch': 'En-Route Chart (Alta Altitude)',
   'enrc_l': 'En-Route Chart (Baixa Altitude)',
@@ -63,9 +65,10 @@ const _tipoToCategory = {
   'cv': 'Cartas de Aeródromos',
   'lc': 'Cartas de Aeródromos',
   'arc': 'Cartas IFR',
+  'ccvRea': 'Cartas VFR',
+  'ccvReh': 'Cartas VFR',
   'rea': 'Cartas VFR',
   'reh': 'Cartas VFR',
-  'reul': 'Cartas VFR',
   'wac': 'Cartas VFR',
   'enrc': 'Cartas IFR',
   'enrcl': 'Cartas IFR',
@@ -75,11 +78,7 @@ const _tipoToCategory = {
   'reast': 'Cartas IFR',
 };
 
-const _categoryOrder = [
-  'Cartas de Aeródromos',
-  'Cartas VFR',
-  'Cartas IFR',
-];
+const _categoryOrder = ['Cartas de Aeródromos', 'Cartas VFR', 'Cartas IFR'];
 
 class _UIGroup {
   final String key;
@@ -234,18 +233,54 @@ class ChartsDownloadScreen extends ConsumerWidget {
     for (final group in state.manifest!.groups) {
       if (group.tipo == 'enrc') {
         // Separa as cartas ENRC em H e L baseado no nome do arquivo
-        final hFiles = group.files.where((f) => f.filename.contains('enrc-h')).toList();
-        final lFiles = group.files.where((f) => f.filename.contains('enrc-l')).toList();
-        final otherEnrcFiles = group.files.where((f) => !f.filename.contains('enrc-h') && !f.filename.contains('enrc-l')).toList();
+        final hFiles = group.files
+            .where(
+              (f) => RegExp(
+                r'ENRC_H\d',
+                caseSensitive: false,
+              ).hasMatch(f.filename),
+            )
+            .toList();
+        final lFiles = group.files
+            .where(
+              (f) => RegExp(
+                r'ENRC_L\d',
+                caseSensitive: false,
+              ).hasMatch(f.filename),
+            )
+            .toList();
+        final otherEnrcFiles = group.files
+            .where(
+              (f) =>
+                  !RegExp(
+                    r'ENRC_H\d',
+                    caseSensitive: false,
+                  ).hasMatch(f.filename) &&
+                  !RegExp(
+                    r'ENRC_L\d',
+                    caseSensitive: false,
+                  ).hasMatch(f.filename),
+            )
+            .toList();
 
         if (hFiles.isNotEmpty) {
-          enrchGroups.add(R2ChartGroup(especie: group.especie, tipo: 'enrch', files: hFiles));
+          enrchGroups.add(
+            R2ChartGroup(especie: group.especie, tipo: 'enrch', files: hFiles),
+          );
         }
         if (lFiles.isNotEmpty) {
-          enrclGroups.add(R2ChartGroup(especie: group.especie, tipo: 'enrcl', files: lFiles));
+          enrclGroups.add(
+            R2ChartGroup(especie: group.especie, tipo: 'enrcl', files: lFiles),
+          );
         }
         if (otherEnrcFiles.isNotEmpty) {
-          otherGroups.add(R2ChartGroup(especie: group.especie, tipo: 'enrc', files: otherEnrcFiles));
+          otherGroups.add(
+            R2ChartGroup(
+              especie: group.especie,
+              tipo: 'enrc',
+              files: otherEnrcFiles,
+            ),
+          );
         }
         continue;
       }
@@ -253,9 +288,15 @@ class ChartsDownloadScreen extends ConsumerWidget {
       final cat = _tipoToCategory[group.tipo] ?? group.tipo.toUpperCase();
       if (cat == 'Cartas de Aeródromos') {
         adGroups.add(group);
-      } else if (group.tipo == 'enrch' || group.tipo == 'enrc_h' || group.key.contains('enrch') || group.key.contains('enrc_h')) {
+      } else if (group.tipo == 'enrch' ||
+          group.tipo == 'enrc_h' ||
+          group.key.contains('enrch') ||
+          group.key.contains('enrc_h')) {
         enrchGroups.add(group);
-      } else if (group.tipo == 'enrcl' || group.tipo == 'enrc_l' || group.key.contains('enrcl') || group.key.contains('enrc_l')) {
+      } else if (group.tipo == 'enrcl' ||
+          group.tipo == 'enrc_l' ||
+          group.key.contains('enrcl') ||
+          group.key.contains('enrc_l')) {
         enrclGroups.add(group);
       } else {
         otherGroups.add(group);
@@ -311,28 +352,36 @@ class ChartsDownloadScreen extends ConsumerWidget {
     }
 
     if (byCategory['Cartas VFR'] != null) {
-      final vfrOrder = ['wac', 'rea', 'reh', 'reul'];
+      final vfrOrder = ['wac', 'rea', 'reh', 'ccvRea', 'ccvReh'];
       byCategory['Cartas VFR']!.sort((a, b) {
         final aType = a.originalGroups.first.tipo;
         final bType = b.originalGroups.first.tipo;
         final aIndex = vfrOrder.indexOf(aType);
         final bIndex = vfrOrder.indexOf(bType);
-        return (aIndex == -1 ? 99 : aIndex).compareTo(bIndex == -1 ? 99 : bIndex);
+        return (aIndex == -1 ? 99 : aIndex).compareTo(
+          bIndex == -1 ? 99 : bIndex,
+        );
       });
     }
 
     if (byCategory['Cartas IFR'] != null) {
       final ifrOrder = ['enrch', 'enrcl', 'arc', 'reast'];
       byCategory['Cartas IFR']!.sort((a, b) {
-        final aType = a.key.startsWith('enrc_h') ? 'enrch' : 
-                      a.key.startsWith('enrc_l') ? 'enrcl' : 
-                      a.originalGroups.first.tipo;
-        final bType = b.key.startsWith('enrc_h') ? 'enrch' : 
-                      b.key.startsWith('enrc_l') ? 'enrcl' : 
-                      b.originalGroups.first.tipo;
+        final aType = a.key.startsWith('enrc_h')
+            ? 'enrch'
+            : a.key.startsWith('enrc_l')
+            ? 'enrcl'
+            : a.originalGroups.first.tipo;
+        final bType = b.key.startsWith('enrc_h')
+            ? 'enrch'
+            : b.key.startsWith('enrc_l')
+            ? 'enrcl'
+            : b.originalGroups.first.tipo;
         final aIndex = ifrOrder.indexOf(aType);
         final bIndex = ifrOrder.indexOf(bType);
-        return (aIndex == -1 ? 99 : aIndex).compareTo(bIndex == -1 ? 99 : bIndex);
+        return (aIndex == -1 ? 99 : aIndex).compareTo(
+          bIndex == -1 ? 99 : bIndex,
+        );
       });
     }
 
@@ -425,7 +474,9 @@ class ChartsDownloadScreen extends ConsumerWidget {
                   if (isDownloading && progress != null) {
                     currentCount = progress.$1;
                   }
-                  final double sliderValue = total > 0 ? (currentCount / total).clamp(0.0, 1.0) : 0.0;
+                  final double sliderValue = total > 0
+                      ? (currentCount / total).clamp(0.0, 1.0)
+                      : 0.0;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -446,7 +497,9 @@ class ChartsDownloadScreen extends ConsumerWidget {
                           minHeight: 6,
                           backgroundColor: context.theme.disabled.withAlpha(50),
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            isComplete ? context.theme.success : context.theme.accent,
+                            isComplete
+                                ? context.theme.success
+                                : context.theme.accent,
                           ),
                         ),
                       ),
@@ -486,11 +539,7 @@ class ChartsDownloadScreen extends ConsumerWidget {
                   ),
                 )
               else if (isComplete)
-                Icon(
-                  Icons.check_circle,
-                  color: context.theme.success,
-                  size: 22,
-                )
+                Icon(Icons.check_circle, color: context.theme.success, size: 22)
               else
                 TextButton(
                   onPressed: () => notifier.downloadGroup(
