@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/r2_manifest.dart';
 import '../services/r2_service.dart';
-import '../services/geotiff_parser.dart';
+import '../services/geopdf_parser.dart';
 import '../services/database_service.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -45,7 +45,7 @@ class ChartsDownloadState {
 class ChartsDownloadNotifier extends Notifier<ChartsDownloadState> {
   final _r2 = R2Service();
   final _db = DatabaseService();
-  final _tiffParser = GeoTiffParser();
+  final _pdfParser = GeoPdfParser();
 
   @override
   ChartsDownloadState build() {
@@ -106,21 +106,40 @@ class ChartsDownloadNotifier extends Notifier<ChartsDownloadState> {
               '$chartsBaseDir/${state.manifest!.folder}/${file.path}';
           final ext = file.path.split('.').last.toLowerCase();
 
+          BoundingBox? bbox;
+
           if (ext == 'tif' || ext == 'tiff') {
-            final bounds = await _tiffParser.extractBoundingBox(localPath);
-            if (bounds != null) {
-              await _db.saveChart(
-                ChartIndex(
-                  key: file.path,
-                  type: file.tipo,
-                  path: localPath,
-                  north: bounds['north']!,
-                  south: bounds['south']!,
-                  east: bounds['east']!,
-                  west: bounds['west']!,
-                ),
-              );
+            // GeoTIFF: bbox always comes from the manifest (extracted by CLI).
+            bbox = file.bbox;
+          } else if (ext == 'pdf') {
+            // PDF: use manifest bbox if available, else parse /GPTS from file.
+            if (file.bbox != null) {
+              bbox = file.bbox;
+            } else {
+              final parsed = await _pdfParser.extractGeoData(localPath);
+              if (parsed != null) {
+                bbox = BoundingBox(
+                  north: (parsed['north'] as num).toDouble(),
+                  south: (parsed['south'] as num).toDouble(),
+                  east: (parsed['east'] as num).toDouble(),
+                  west: (parsed['west'] as num).toDouble(),
+                );
+              }
             }
+          }
+
+          if (bbox != null) {
+            await _db.saveChart(
+              ChartIndex(
+                key: file.path,
+                type: file.tipo,
+                path: localPath,
+                north: bbox.north,
+                south: bbox.south,
+                east: bbox.east,
+                west: bbox.west,
+              ),
+            );
           }
 
           completed++;
