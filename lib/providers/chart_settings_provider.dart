@@ -1,11 +1,12 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
 import '../services/database_service.dart';
-import '../services/geotiff_parser.dart';
 import '../services/geopdf_parser.dart';
+import '../services/geotiff_parser.dart';
 
 class BaseChart {
   final String path;
@@ -23,6 +24,7 @@ class ChartSettings {
     this.iacBoundingBox,
     this.selectedBaseChart = 'WAC',
     this.baseCharts = const [],
+    this.arcCharts = const [],
     this.isLoadingBaseCharts = false,
   });
 
@@ -34,6 +36,7 @@ class ChartSettings {
 
   final String selectedBaseChart; // 'ENRC L', 'ENRC H', 'WAC', 'Nenhum'
   final List<BaseChart> baseCharts;
+  final List<BaseChart> arcCharts;
   final bool isLoadingBaseCharts;
 
   ChartSettings copyWith({
@@ -44,6 +47,7 @@ class ChartSettings {
     Map<String, double>? iacBoundingBox,
     String? selectedBaseChart,
     List<BaseChart>? baseCharts,
+    List<BaseChart>? arcCharts,
     bool? isLoadingBaseCharts,
   }) => ChartSettings(
     wacOpacity: wacOpacity ?? this.wacOpacity,
@@ -53,6 +57,7 @@ class ChartSettings {
     iacBoundingBox: iacBoundingBox ?? this.iacBoundingBox,
     selectedBaseChart: selectedBaseChart ?? this.selectedBaseChart,
     baseCharts: baseCharts ?? this.baseCharts,
+    arcCharts: arcCharts ?? this.arcCharts,
     isLoadingBaseCharts: isLoadingBaseCharts ?? this.isLoadingBaseCharts,
   );
 }
@@ -114,6 +119,7 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
     state = state.copyWith(
       selectedBaseChart: type,
       baseCharts: [],
+      arcCharts: [],
       isLoadingBaseCharts: true,
     );
     final prefs = await SharedPreferences.getInstance();
@@ -137,8 +143,8 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
         final page = await document.getPage(1);
 
         final pageImage = await page.render(
-          width: page.width * 2,
-          height: page.height * 2,
+          width: page.width,
+          height: page.height,
           format: PdfPageImageFormat.png,
         );
 
@@ -190,6 +196,10 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
                 (c) => enrcFilter!.hasMatch(c.path.split('/').last),
               )
               .toList();
+      debugPrint(
+        '[ChartSettings] DB "$tipoQuery": ${allChartsFromDb.length} total, '
+        '${chartsFromDb.length} after filter',
+      );
       final List<BaseChart> loadedCharts = [];
 
       for (final c in chartsFromDb) {
@@ -207,10 +217,12 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
           ),
         );
       }
+      debugPrint('[ChartSettings] Loaded from DB: ${loadedCharts.length} charts');
 
       // Sincronização preguiçosa: Verifica se há arquivos na pasta que não estão no DB (caso tenham sido baixados antes do DB)
       final dir = await getApplicationDocumentsDirectory();
       final chartsDir = Directory('${dir.path}/charts');
+      debugPrint('[ChartSettings] Lazy scan dir: ${chartsDir.path} (exists: ${chartsDir.existsSync()})');
       if (await chartsDir.exists()) {
         final cycleDirs = chartsDir.listSync().whereType<Directory>();
         for (final cycleDir in cycleDirs) {
@@ -225,14 +237,11 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
               );
               for (final file in files) {
                 if (!loadedCharts.any((c) => c.path == file.path)) {
+                  debugPrint('[ChartSettings] Lazy scan: ${file.path}');
                   final ext = file.path.split('.').last.toLowerCase();
                   Map<String, double>? bounds;
 
-                  if (ext == 'tif' || ext == 'tiff') {
-                    bounds = await GeoTiffParser().extractBoundingBox(
-                      file.path,
-                    );
-                  } else if (ext == 'pdf') {
+                  if (ext == 'pdf') {
                     final dynBounds = await GeoPdfParser().extractGeoData(
                       file.path,
                     );
@@ -244,9 +253,17 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
                         'west': dynBounds['west'] as double,
                       };
                     }
+                  } else if (ext == 'tif' || ext == 'tiff') {
+                    final geoData = await GeoTiffParser().extractBoundingBox(
+                      file.path,
+                    );
+                    if (geoData != null) {
+                      bounds = geoData;
+                    }
                   }
 
                   if (bounds != null) {
+                    debugPrint('[ChartSettings] Lazy scan: bbox OK → adding');
                     final newChart = ChartIndex(
                       key: file.path,
                       type: tipoQuery,
@@ -262,6 +279,8 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
                     loadedCharts.add(
                       BaseChart(path: renderedPath, boundingBox: bounds),
                     );
+                  } else {
+                    debugPrint('[ChartSettings] Lazy scan: no bbox for ${file.path.split('/').last}');
                   }
                 }
               }
@@ -300,11 +319,33 @@ class ChartSettingsNotifier extends Notifier<ChartSettings> {
         }
       }
 
+      debugPrint('[ChartSettings] Final: ${loadedCharts.length} charts for "$type"');
+
+      List<BaseChart> arcCharts = [];
+      if (type == 'ENRC L' || type == 'ENRC H') {
+        final arcFromDb = await _db.getChartsByType('arc');
+        for (final c in arcFromDb) {
+          final finalPath = await _ensureRenderedPath(c.path);
+          arcCharts.add(BaseChart(
+            path: finalPath,
+            boundingBox: {
+              'north': c.north,
+              'south': c.south,
+              'east': c.east,
+              'west': c.west,
+            },
+          ));
+        }
+        debugPrint('[ChartSettings] Loaded ARC overlays: ${arcCharts.length}');
+      }
+
       state = state.copyWith(
         baseCharts: loadedCharts,
+        arcCharts: arcCharts,
         isLoadingBaseCharts: false,
       );
     } catch (e) {
+      debugPrint('[ChartSettings] ERROR in _loadBaseCharts($type): $e');
       state = state.copyWith(baseCharts: [], isLoadingBaseCharts: false);
     }
   }

@@ -4,6 +4,7 @@ import '../services/r2_service.dart';
 import '../services/geopdf_parser.dart';
 import '../services/database_service.dart';
 import 'package:path_provider/path_provider.dart';
+import 'chart_settings_provider.dart';
 
 class ChartsDownloadState {
   final R2Manifest? manifest;
@@ -12,6 +13,7 @@ class ChartsDownloadState {
   final Map<String, int> localCounts;
   final Set<String> downloading;
   final Map<String, (int, int)> downloadProgress;
+  final Map<String, int> failedCounts;
 
   const ChartsDownloadState({
     this.manifest,
@@ -20,6 +22,7 @@ class ChartsDownloadState {
     this.localCounts = const {},
     this.downloading = const {},
     this.downloadProgress = const {},
+    this.failedCounts = const {},
   });
 
   ChartsDownloadState copyWith({
@@ -29,6 +32,7 @@ class ChartsDownloadState {
     Map<String, int>? localCounts,
     Set<String>? downloading,
     Map<String, (int, int)>? downloadProgress,
+    Map<String, int>? failedCounts,
     bool clearError = false,
   }) {
     return ChartsDownloadState(
@@ -38,6 +42,7 @@ class ChartsDownloadState {
       localCounts: localCounts ?? this.localCounts,
       downloading: downloading ?? this.downloading,
       downloadProgress: downloadProgress ?? this.downloadProgress,
+      failedCounts: failedCounts ?? this.failedCounts,
     );
   }
 }
@@ -93,6 +98,7 @@ class ChartsDownloadNotifier extends Notifier<ChartsDownloadState> {
     );
 
     int completed = 0;
+    int failed = 0;
     final baseDir = await getApplicationDocumentsDirectory();
     final chartsBaseDir = '${baseDir.path}/charts';
 
@@ -141,17 +147,16 @@ class ChartsDownloadNotifier extends Notifier<ChartsDownloadState> {
               ),
             );
           }
-
-          completed++;
-
-          final updatedProgress = Map<String, (int, int)>.from(
-            state.downloadProgress,
-          );
-          updatedProgress[uiGroupKey] = (completed, totalFiles);
-          state = state.copyWith(downloadProgress: updatedProgress);
         } catch (_) {
-          // Continua nos erros individuais
+          failed++;
         }
+
+        completed++;
+        final updatedProgress = Map<String, (int, int)>.from(
+          state.downloadProgress,
+        );
+        updatedProgress[uiGroupKey] = (completed, totalFiles);
+        state = state.copyWith(downloadProgress: updatedProgress);
       }
     }
 
@@ -165,12 +170,21 @@ class ChartsDownloadNotifier extends Notifier<ChartsDownloadState> {
       ..remove(uiGroupKey);
     final finalProgress = Map<String, (int, int)>.from(state.downloadProgress)
       ..remove(uiGroupKey);
+    final newFailed = Map<String, int>.from(state.failedCounts);
+    if (failed > 0) {
+      newFailed[uiGroupKey] = failed;
+    } else {
+      newFailed.remove(uiGroupKey);
+    }
 
     state = state.copyWith(
       localCounts: newCounts,
       downloading: finalDownloading,
       downloadProgress: finalProgress,
+      failedCounts: newFailed,
     );
+
+    ref.read(chartSettingsProvider.notifier).refresh();
   }
 }
 

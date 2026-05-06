@@ -6,12 +6,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:navbr/firebase_options.dart';
 import 'package:navbr/providers/chart_settings_provider.dart';
 import 'package:navbr/providers/theme_provider.dart';
 import 'package:navbr/router/app_router.dart';
+import 'package:navbr/models/flight_log.dart';
 import 'package:navbr/services/database_service.dart';
 import 'package:navbr/services/download_service.dart';
 import 'package:navbr/services/geotiff_parser.dart';
@@ -25,17 +27,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarBrightness: Brightness.dark,
+    statusBarIconBrightness: Brightness.light,
+  ));
   await dotenv.load(fileName: ".env");
   
   await Hive.initFlutter();
-  Hive.registerAdapter(ChartIndexAdapter());
+  if (!Hive.isAdapterRegistered(0)) {
+    Hive.registerAdapter(ChartIndexAdapter());
+  }
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(FlightLogAdapter());
+  }
   
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+  if (Platform.isIOS || Platform.isAndroid) {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -55,6 +69,25 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarBrightness: Brightness.dark,
+          statusBarIconBrightness: Brightness.light,
+        ),
+        child: Stack(
+          children: [
+            child!,
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.paddingOf(context).top,
+              child: const ColoredBox(color: Colors.black),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

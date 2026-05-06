@@ -5,26 +5,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:go_router/go_router.dart';
 import 'package:navbr/providers/icao_search_provider.dart';
 import 'package:navbr/theme/app_colors.dart';
 import 'package:navbr/theme/app_theme.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
-
-/// ChartsViewScreen
-/// Tela de visualização e gerenciamento de cartas aeronáuticas.
-/// Possui uma barra superior estilo cockpit para busca e filtros.
-///
-/// Classes presentes:
-/// - ChartsViewScreen: Widget principal da tela.
-/// - _TopBarIcon: Widget auxiliar para ícones da barra superior.
-/// - _SearchBar: Widget auxiliar para o campo de busca.
-///
-/// Métodos presentes:
-/// - build: Constrói a interface da tela.
-/// - _buildTopBar: Constrói a barra superior escura.
-
-import 'package:navbr/providers/icao_search_provider.dart';
 
 /// ChartsViewScreen
 /// Tela de visualização e gerenciamento de cartas aeronáuticas.
@@ -110,6 +96,11 @@ class _ChartsViewScreenState extends ConsumerState<ChartsViewScreen> {
               const _TopBarIcon(icon: Icons.tune),
               const Spacer(),
               _SearchBar(controller: _searchController, onSubmitted: _onSearch),
+              const SizedBox(width: 4),
+              _TopBarIcon(
+                icon: Icons.download_outlined,
+                onTap: () => context.push('/charts/download'),
+              ),
             ],
           ),
         ),

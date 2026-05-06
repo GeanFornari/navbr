@@ -111,8 +111,8 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
       final page = await document.getPage(1);
 
       final pageImage = await page.render(
-        width: page.width * 3,
-        height: page.height * 3,
+        width: page.width * 1.5,
+        height: page.height * 1.5,
         format: PdfPageImageFormat.png,
       );
 
@@ -290,6 +290,20 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
             }).toList(),
           ),
 
+        if (settings.arcCharts.isNotEmpty)
+          OverlayImageLayer(
+            overlayImages: settings.arcCharts.map((chart) {
+              return OverlayImage(
+                bounds: LatLngBounds(
+                  LatLng(chart.boundingBox['south']!, chart.boundingBox['west']!),
+                  LatLng(chart.boundingBox['north']!, chart.boundingBox['east']!),
+                ),
+                imageProvider: FileImage(File(chart.path)),
+                opacity: 0.85,
+              );
+            }).toList(),
+          ),
+
         if (settings.isIacVisible &&
             _renderedIacPath != null &&
             settings.iacBoundingBox != null)
@@ -382,7 +396,41 @@ class _NavigationMapScreenState extends ConsumerState<NavigationMapScreen> {
             child: Row(
               children: [
                 _ChartSelectorButton(),
-                const SizedBox(width: 8),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final settings = ref.watch(chartSettingsProvider);
+                    if (settings.selectedBaseChart == 'Nenhum') {
+                      return const SizedBox.shrink();
+                    }
+                    return GestureDetector(
+                      onTap: settings.isLoadingBaseCharts
+                          ? null
+                          : () => ref
+                              .read(chartSettingsProvider.notifier)
+                              .refresh(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: settings.isLoadingBaseCharts
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white60,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                Icons.sync,
+                                size: 18,
+                                color: settings.baseCharts.isEmpty
+                                    ? AppColors.warning
+                                    : Colors.white38,
+                              ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 4),
                 _TopBarIcon(icon: Icons.route, label: 'FPL'),
                 _TopBarIcon(icon: Icons.tune),
                 _TopBarIcon(
@@ -500,7 +548,9 @@ class _ChartSelectorButton extends ConsumerWidget {
               const Icon(Icons.layers_outlined, color: Colors.white, size: 15),
             const SizedBox(width: 6),
             Text(
-              settings.selectedBaseChart,
+              settings.selectedBaseChart == 'Nenhum'
+                  ? 'Nenhum'
+                  : '${settings.selectedBaseChart} (${settings.baseCharts.length})',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,

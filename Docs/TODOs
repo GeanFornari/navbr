@@ -1,5 +1,7 @@
 Domínio próprio no Cloudflare para produção.
 
+Permitir apenas uma carta de AD por vez no Mapa
+
 2. MBTiles Offline: Fazer o download de um arquivo único fechado (.mbtiles)
  contendo o mapa de relevo/ruas do Brasil inteiro e carregar direto do disco,
   extinguindo 100% o uso do OpenStreetMap online.

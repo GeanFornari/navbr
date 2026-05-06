@@ -433,6 +433,7 @@ class ChartsDownloadScreen extends ConsumerWidget {
     final total = uiGroup.totalFiles;
     final isDownloading = state.downloading.contains(uiGroup.key);
     final progress = state.downloadProgress[uiGroup.key];
+    final failedCount = state.failedCounts[uiGroup.key] ?? 0;
     final isComplete = localCount >= total && total > 0;
     final isPartial = localCount > 0 && localCount < total;
 
@@ -514,13 +515,28 @@ class ChartsDownloadScreen extends ConsumerWidget {
                               color: context.theme.customTextSecondary,
                             ),
                           ),
-                          Text(
-                            '$currentCount/$total',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.theme.customTextSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          Row(
+                            children: [
+                              if (failedCount > 0) ...[
+                                Text(
+                                  '$failedCount falhas',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).colorScheme.error,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Text(
+                                '$currentCount/$total',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: context.theme.customTextSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

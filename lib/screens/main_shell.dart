@@ -209,8 +209,8 @@ class MainShell extends ConsumerWidget {
           unselectedLabelStyle: const TextStyle(fontSize: 12),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.local_airport_outlined),
-              activeIcon: Icon(Icons.local_airport),
+              icon: ImageIcon(AssetImage('assets/airport_icon.png')),
+              activeIcon: ImageIcon(AssetImage('assets/airport_icon.png')),
               label: 'Aeroportos',
             ),
             BottomNavigationBarItem(
