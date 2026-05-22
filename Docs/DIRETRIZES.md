@@ -1,16 +1,35 @@
-# Diretrizes de Desenvolvimento (PoC Geo Cartas)
+# Diretrizes de Desenvolvimento — navbr
 
 ## 1. Versões e Dependências
-- **Sempre utilize as versões mais recentes** (latest) de todos os pacotes do Flutter/Dart.
-- Em caso de conflitos de dependência (ex: pacote A exige pacote C v1, mas pacote B exige pacote C v2), devemos priorizar a atualização do pacote mais antigo ou, se necessário, utilizar `dependency_overrides` no `pubspec.yaml` ao invés de fazer downgrade em cascata, mantendo assim o projeto apontando para o futuro.
 
-## 2. Arquitetura do PoC
-- O escopo atual é 100% focado no frontend/renderização.
-- Não usar arquiteturas complexas (como Hive, Riverpod, etc.) até que a prova de conceito matemática (Lat/Lon -> XY) esteja validada.
-- O backend/CLI que servirá os arquivos de forma otimizada será implementado em outro projeto/momento. O aplicativo apenas testa o download pontual para ter os arquivos localmente.
+- **Sempre utilize as versões mais recentes** (latest) de todos os pacotes do Flutter/Dart.
+- Em caso de conflitos de dependência, priorizar a atualização do pacote mais antigo ou utilizar `dependency_overrides` no `pubspec.yaml`. Nunca fazer downgrade em cascata.
+
+## 2. Arquitetura
+
+- **State management:** Riverpod (`Notifier` / `NotifierProvider`). Não usar `ChangeNotifier`.
+- **Navegação:** `go_router` com `StatefulShellRoute.indexedStack` (5 tabs).
+- **Persistência local:** Hive para índice de cartas (`ChartIndex`), `SharedPreferences` para configurações simples.
+- **Cartas base:** `ChartSettingsProvider` carrega cartas do DB por tipo e as expõe como `List<BaseChart>` com `path` + `bbox`.
+- **Backend/CLI:** `charts_loader_cli` (projeto separado) — responsável por baixar, processar e empacotar as cartas. O app não faz parsing pesado; recebe bbox pronto via manifest.
 
 ## 3. Regras de Código
-- Manter as classes pequenas e bem separadas:
-  - `AiswebApiService`: Lida com comunicação de APIs.
-  - `DownloadService`: Lida com a gravação de arquivos e requisições HTTP estáticas de mídias.
-  - *Parsers* geográficos devem ser isolados em serviços próprios.
+
+- Manter serviços isolados:
+  - `AiswebApiService` — comunicação com a API AISWEB (XML).
+  - `R2Service` — download de cartas do Cloudflare R2.
+  - `DatabaseService` — CRUD do Hive (`ChartIndex`).
+  - Parsers geográficos (`GeoTiffParser`, `GeoPdfParser`) — isolados, sem dependência de UI.
+- Seguir as restrições de UI do `CLAUDE.md`: sem `AppBar`, sempre `AppColors`, sempre `SafeArea`.
+
+## 4. Cartas — Tipos e Fontes
+
+| Tipo | Fonte | Formato | Renderização atual |
+|---|---|---|---|
+| WAC | WMS GeoAISWEB | GeoTIFF `.tif` | `FileImage` → `OverlayImageLayer` |
+| ENRC (H/L) | WMS GeoAISWEB | GeoTIFF `.tif` | `FileImage` → `OverlayImageLayer` |
+| ARC | WMS GeoAISWEB | GeoTIFF `.tif` | `FileImage` → `OverlayImageLayer` (overlay automático com ENRC) |
+| REA / REH / CCV | WMS GeoAISWEB | GeoTIFF `.tif` | `FileImage` → `OverlayImageLayer` |
+| IAC / SID / STAR / ADC | AISWEB API | GeoPDF `.pdf` | `pdfx` → PNG 1× → `OverlayImageLayer` |
+
+> **Nota:** A renderização via `FileImage` de GeoTIFFs causa OOM em devices físicos. A migração para MBTiles está documentada em `Docs/mbtiles-migration.md`.

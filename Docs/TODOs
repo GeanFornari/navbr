@@ -1,5 +1,7 @@
 Domínio próprio no Cloudflare para produção.
 
+Pode alterar os .md e outros necessários para deixar claro que este projeto não é mais POC e está sendo desenvolvido para produção.
+
 Permitir apenas uma carta de AD por vez no Mapa
 
 2. MBTiles Offline: Fazer o download de um arquivo único fechado (.mbtiles)
@@ -11,7 +13,10 @@ No dropdown de tipo de carta, só mostrar as cartas disponíveis (baixadas).
 Criar o CLAUDE Ignore.
 
 O que precisamos fazer? (Recomendação)
-Embora não precise sair correndo hoje (as versões atuais continuam funcionando), é altamente recomendável planejar essa migração nos próximos meses para evitar dores de cabeça no final do ano.
+Embora não precise sair correndo hoje
+ (as versões atuais continuam funcionando), 
+ é altamente recomendável planejar essa migração 
+ nos próximos meses para evitar dores de cabeça no final do ano.
 
 Os passos para os projetos (navbr, ais-br, journeycomply, etc) serão:
 

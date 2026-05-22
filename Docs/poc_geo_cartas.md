@@ -1,6 +1,10 @@
-# Prova de Conceito (PoC): Navegação GPS em Cartas Georreferenciadas
+# [HISTÓRICO] Prova de Conceito: Navegação GPS em Cartas Georreferenciadas
 
-Este documento serve como ponto de partida e guia para o desenvolvimento do sistema de navegação sobre cartas aeronáuticas (Moving Map).
+> **Este documento é histórico.** A PoC foi concluída com sucesso e o conhecimento foi integrado ao **navbr**, que está em desenvolvimento para produção. As decisões técnicas validadas aqui estão documentadas em `Docs/DICAS_IMPLEMENTACAO.md`. O plano arquitetural atual está em `Docs/DIRETRIZES.md`.
+
+---
+
+Este documento registra o planejamento e as hipóteses iniciais da PoC que originou o navbr.
 
 ## O que o DECEA (GeoAISWEB) fornece
 - **GeoPDFs**: Cartas de procedimento (IAC, SID, STAR) baixadas diretamente do AISWEB já vêm com metadados geoespaciais (Padrão OGC / Adobe PDF embutido).
@@ -19,7 +23,7 @@ Para WACs e ERCs, utilizamos `flutter_map` com `OverlayImage`. Extraímos o *Bou
 
 ## O Fluxo Ideal (O Caminho do Expert)
 
-Para evitar poluição de dependências no projeto principal e focar 100% na complexidade matemática e de rendering, o desenvolvimento seguirá a abordagem de um projeto Sandbox isolado.
+Para evitar poluição de dependências no projeto principal e focar 100% na complexidade matemática e de rendering, o desenvolvimento seguiu a abordagem de um projeto Sandbox isolado.
 
 ### 1. App "Sandbox" (`aisbr_geo_poc`)
 Criar um projeto Flutter em branco fora da árvore principal do aplicativo:

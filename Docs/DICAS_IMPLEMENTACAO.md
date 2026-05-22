@@ -1,37 +1,36 @@
-# Dicas de Implementação para o App Principal (AISBR)
+# Lições Aprendidas — navbr
 
-Com a finalização bem-sucedida da Prova de Conceito (PoC) de renderização de Moving Map (GPS sobre cartas do DECEA), compilamos abaixo as principais lições aprendidas e recomendações arquiteturais para quando este código for migrado para o projeto pai.
+Decisões técnicas validadas durante o desenvolvimento, documentadas para referência futura.
 
-## 1. Desoneração do Lado do Cliente (Mobile)
-Durante a PoC, o aplicativo Flutter precisou carregar arquivos GeoTIFF imensos (como a WAC de São Paulo com ~170MB) na memória RAM (via `ByteData`) apenas para ler as Tags EXIF binárias e descobrir as coordenadas dos quatro cantos. 
-**Recomendação:** Seu servidor/CLI deve assumir essa responsabilidade. O fluxo ideal é:
-1. A CLI baixa a WAC do GeoAISWEB.
-2. A CLI lê as Tags geográficas (33922, 33550, 34264) no servidor.
-3. A CLI gera um arquivo JSON leve (ex: `wac_sao_paulo_meta.json`) contendo apenas as latitudes e longitudes (Bounding Box).
-4. O App Mobile baixa o `.tif` e o `.json`. Assim, o Flutter não gasta bateria e memória fazendo *parsing* binário; ele apenas joga o TIFF na tela usando as coordenadas já prontas do JSON.
+## 1. Bbox no servidor, não no app
 
-## 2. Tratamento de Arquivos Pesados (Tiling)
-Arquivos de 200MB num dispositivo móvel antigo causarão fechamentos (Out of Memory - OOM).
-**Recomendação futura:** O `flutter_map` roda de maneira absurdamente mais rápida se você converter grandes GeoTIFFs em recortes menores (Tiles / formato MBTiles / XYZ). A sua CLI no servidor pode rodar ferramentas gratuitas como o `gdal2tiles` nas cartas WAC antes de mandá-las pro celular. Isso viabiliza abrir o mapa inteiro do Brasil num celular antigo.
+Durante os primeiros testes, o app carregava GeoTIFFs inteiros (~170MB) na RAM só para ler as tags EXIF binárias e descobrir as coordenadas dos quatro cantos. Isso causava OOM.
 
-## 3. Alinhamento Preciso do GeoPDF (Cartas de Procedimento - IAC/SID)
-Na PoC, conseguimos ler a matriz `/GPTS` e `/LPTS` do padrão OGC embutido no PDF. No entanto, o PDF de procedimento é uma página A4 que contém o mapa apenas em um "quadrado" desenhado no meio da página (envolto por margens brancas, perfil de descida e tabelas de mínimos).
-**Recomendação:** Para o avião "bater" exatamente em cima das linhas do PDF:
-1. Extraia o `LPTS` (Local Points) - Eles informam a porcentagem (de 0.0 a 1.0) da folha A4 onde o mapa começa e termina.
-2. Use esses percentuais para aplicar um "Offset" (deslocamento) ou fazer um "Crop" (recorte) na imagem gerada pelo `pdfx`, garantindo que apenas a seção geográfica seja usada na projeção (Bounding Box) do `flutter_map`.
+**Decisão adotada:** O `charts_loader_cli` extrai o bbox de cada arquivo (GeoTIFF via metadata WMS; PDF via regex `/GPTS`) e o publica no `manifest.json`. O app consome o manifest e nunca faz parsing de headers binários.
 
-## 4. O Sistema de Rotação (North Up / Track Up)
-A matemática de rotação é complexa devido à interferência entre o motor gráfico e os widgets de interface.
-Para que o ícone do avião funcione livre de erros em ambos os modos:
-- Configure a camada que segura o avião (`MarkerLayer`) com o parâmetro `rotate: false`. Isso fará o contêiner do avião ser imune à rotação da terra embaixo dele.
-- Quando o mapa estiver no modo **Track Up**, a terra (`_mapController`) gira no valor exato de `-bearing` (proa invertida) e o ícone do avião fica no ângulo `0` (Sempre apontando para o topo fixo da tela de vidro do celular).
-- Quando no modo **North Up**, a terra fica travada em `0` e o ícone do avião ganha a rotação igual ao `bearing` (apontando na diagonal).
+## 2. GeoTIFFs grandes causam OOM — próximo passo: MBTiles
 
-## 5. Lidando com Coordenadas Repetidas
-Sistemas reais de GPS flutuam e muitas vezes transmitem dois pacotes (ticks) idênticos seguidos. Se a coordenada atual for idêntica à do milissegundo passado, calcular a "Proa" (Bearing) resultará em **`NaN`** (Not a Number) devido a divisões por zero na matriz da distância, fazendo o mapa fechar.
-Sempre inclua *guards* (travas) como `if (bearing.isNaN)` antes de passar graus para a interface visual.
+Mesmo com o bbox vindo pronto, carregar um `.tif` de 174MB como `FileImage` aloca ~500MB+ RGBA na RAM. Em devices físicos com memória limitada, o app fecha.
 
-## 6. Múltiplos Formatos e Domínios
-O DECEA usa dois domínios diferentes. Fique atento no parser de links da sua CLI:
-- APIs XML antigas (como as que trazem PDFs): Costumam apontar links com o `.gov.br` (ex: aisweb.decea.gov.br). Algumas rotas foram desativadas neste domínio, devendo sempre ser substituído em tempo de execução para `.mil.br`.
-- Mídias estáticas pesadas (TIFFs): Ficam em servidor Nginx "cru" e previsível no GeoAISWEB (ex: `geoaisweb.decea.mil.br/src/geotiffs/WAC_3262_SAO_PAULO.tif`).
+**Decisão planejada:** Converter GeoTIFFs para MBTiles no CI antes do upload para o R2. O app usará `flutter_map_mbtiles` para renderizar só os tiles visíveis (~5MB em uso). Plano completo em `Docs/mbtiles-migration.md`.
+
+## 3. Alinhamento preciso do GeoPDF (IAC/SID)
+
+O PDF de procedimento é uma folha A4 com o mapa num quadrado central, cercado de margens, perfil de descida e tabelas. O overlay atual alinha pelo bbox da folha inteira.
+
+**Para corrigir:** Extrair o `LPTS` (Local Points, valores 0.0–1.0) e usá-los como offset/crop da imagem gerada pelo `pdfx`, para que somente a seção geográfica seja projetada no `OverlayImage`. Ainda não implementado.
+
+## 4. Rotação North Up / Track Up
+
+- `MarkerLayer(rotate: false)` — o container do avião é imune à rotação do mapa.
+- **Track Up:** `_mapController.rotate(360 − bearing)` + ícone a 0°.
+- **North Up:** mapa travado em 0° + ícone rotaciona com o `bearing`.
+
+## 5. NaN no bearing (coordenadas duplicadas)
+
+GPS real emite pacotes com coordenadas idênticas. Calcular bearing entre dois pontos iguais resulta em `NaN` (divisão por zero na distância). Sempre verificar `bearing.isNaN` antes de repassar ao mapa.
+
+## 6. Dois domínios DECEA
+
+- API XML (PDFs): links podem apontar para `aisweb.decea.gov.br` (domínio antigo). Substituir por `.mil.br` em tempo de execução — o `DownloadService` já faz isso automaticamente.
+- Mídias estáticas (GeoTIFFs): `geoaisweb.decea.mil.br` via WMS.
